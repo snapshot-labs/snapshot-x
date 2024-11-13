@@ -10,14 +10,13 @@ mod Space {
         IExecutionStrategyDispatcherTrait
     };
     use sx::types::{
-        UserAddress, Choice, FinalizationStatus, Strategy, IndexedStrategy, Proposal,
-        PackedProposal, IndexedStrategyTrait, IndexedStrategyImpl, UpdateSettingsCalldata,
-        NoUpdateTrait, NoUpdateString, strategy::StoreFelt252Array, ProposalStatus,
-        proposal::ProposalDefault
+        UserAddress, FinalizationStatus, Strategy, IndexedStrategy, Proposal, PackedProposal,
+        IndexedStrategyTrait, IndexedStrategyImpl, UpdateSettingsCalldata, NoUpdateTrait,
+        NoUpdateString, strategy::StoreFelt252Array, ProposalStatus, proposal::ProposalDefault
     };
     use sx::utils::{
-        BitSetter, LegacyHashChoice, LegacyHashUserAddress, LegacyHashVotePower,
-        LegacyHashVoteRegistry, constants::{INITIALIZE_SELECTOR, POST_UPGRADE_INITIALIZER_SELECTOR}
+        BitSetter, LegacyHashUserAddress, LegacyHashVoteRegistry,
+        constants::{INITIALIZE_SELECTOR, POST_UPGRADE_INITIALIZER_SELECTOR}
     };
     use sx::utils::reinitializable::ReinitializableComponent;
 
@@ -46,7 +45,8 @@ mod Space {
         _proposal_validation_strategy: Strategy,
         _authenticators: LegacyMap::<ContractAddress, bool>,
         _proposals: LegacyMap::<u256, Proposal>,
-        _vote_power: LegacyMap::<(u256, Choice), u256>,
+        _vote_power: LegacyMap::<(u256, u128), u256>,
+        _choices: LegacyMap::<u256, u128>,
         _vote_registry: LegacyMap::<(u256, UserAddress), bool>,
         #[substorage(v0)]
         ownable: OwnableComponent::Storage,
@@ -110,7 +110,7 @@ mod Space {
     struct VoteCast {
         proposal_id: u256,
         voter: UserAddress,
-        choice: Choice,
+        choice: u128,
         voting_power: u256,
         metadata_uri: Span<felt252>,
     }
@@ -251,12 +251,14 @@ mod Space {
         fn propose(
             ref self: ContractState,
             author: UserAddress,
+            choices: u128,
             metadata_uri: Array<felt252>,
             execution_strategy: Strategy,
             user_proposal_validation_params: Array<felt252>,
         ) {
             self.assert_only_authenticator();
             assert(author.is_non_zero(), 'Zero Address');
+            assert(choices > 1, 'Invalid number of choices');
 
             // Proposal Validation
             let proposal_validation_strategy = self._proposal_validation_strategy.read();
@@ -295,6 +297,7 @@ mod Space {
             self._proposals.write(proposal_id, proposal.clone());
 
             self._next_proposal_id.write(proposal_id + 1);
+            self._choices.write(proposal_id, choices);
 
             self
                 .emit(
@@ -314,7 +317,7 @@ mod Space {
             ref self: ContractState,
             voter: UserAddress,
             proposal_id: u256,
-            choice: Choice,
+            choice: u128,
             user_voting_strategies: Array<IndexedStrategy>,
             metadata_uri: Array<felt252>
         ) {
@@ -345,6 +348,9 @@ mod Space {
                     proposal.active_voting_strategies
                 );
             assert(voting_power > 0, 'User has no voting power');
+
+            let choices = self._choices.read(proposal_id);
+            assert(choice < choices, 'Invalid choice');
 
             self
                 ._vote_power
@@ -388,16 +394,11 @@ mod Space {
             proposal.finalization_status = FinalizationStatus::Executed(());
 
             self._proposals.write(proposal_id, proposal);
+            let votes = self.generate_votes_array(proposal_id);
+            assert(votes.len() == 3, 'ERROR');
 
             IExecutionStrategyDispatcher { contract_address: cached_proposal.execution_strategy }
-                .execute(
-                    proposal_id,
-                    cached_proposal,
-                    self._vote_power.read((proposal_id, Choice::For(()))),
-                    self._vote_power.read((proposal_id, Choice::Against(()))),
-                    self._vote_power.read((proposal_id, Choice::Abstain(()))),
-                    execution_payload
-                );
+                .execute(proposal_id, cached_proposal, votes, execution_payload);
 
             self.emit(Event::ProposalExecuted(ProposalExecuted { proposal_id: proposal_id }));
         }
@@ -420,6 +421,7 @@ mod Space {
             ref self: ContractState,
             author: UserAddress,
             proposal_id: u256,
+            choices: u128,
             execution_strategy: Strategy,
             metadata_uri: Array<felt252>,
         ) {
@@ -435,12 +437,14 @@ mod Space {
                 info::get_block_timestamp() < proposal.start_timestamp.into(),
                 'Voting period started'
             );
+            assert(choices > 1, 'Invalid number of choices');
 
             proposal
                 .execution_payload_hash =
                     poseidon::poseidon_hash_span(execution_strategy.params.span());
             proposal.execution_strategy = execution_strategy.address;
 
+            self._choices.write(proposal_id, choices);
             self._proposals.write(proposal_id, proposal);
 
             self
@@ -540,12 +544,10 @@ mod Space {
             let proposal = self._proposals.read(proposal_id);
             InternalImpl::assert_proposal_exists(@proposal);
 
-            let votes_for = self._vote_power.read((proposal_id, Choice::For(())));
-            let votes_against = self._vote_power.read((proposal_id, Choice::Against(())));
-            let votes_abstain = self._vote_power.read((proposal_id, Choice::Abstain(())));
+            let votes = self.generate_votes_array(proposal_id);
 
             IExecutionStrategyDispatcher { contract_address: proposal.execution_strategy }
-                .get_proposal_status(proposal, votes_for, votes_against, votes_abstain)
+                .get_proposal_status(proposal, votes)
         }
 
         fn update_settings(ref self: ContractState, input: UpdateSettingsCalldata) {
@@ -709,13 +711,25 @@ mod Space {
             self._vote_registry.read((proposal_id, voter))
         }
 
-        fn vote_power(self: @ContractState, proposal_id: u256, choice: Choice) -> u256 {
+        fn vote_power(self: @ContractState, proposal_id: u256, choice: u128) -> u256 {
             self._vote_power.read((proposal_id, choice))
         }
     }
 
     #[generate_trait]
     impl InternalImpl of InternalTrait {
+        fn generate_votes_array(self: @ContractState, proposal_id: u256) -> Array<u256> {
+            let mut votes: Array<u256> = array![];
+            let mut i = 0;
+            let mut choices: u128 = self._choices.read(proposal_id);
+            while i != choices {
+                let vp: u256 = self._vote_power.read((proposal_id, i));
+                votes.append(vp);
+                i += 1;
+            };
+            votes
+        }
+
         fn assert_only_authenticator(self: @ContractState) {
             let caller: ContractAddress = info::get_caller_address();
             assert(self._authenticators.read(caller), 'Caller is not an authenticator');

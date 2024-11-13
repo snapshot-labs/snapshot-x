@@ -157,15 +157,19 @@ mod TimelockExecutionStrategy {
             ref self: ContractState,
             proposal_id: u256,
             proposal: Proposal,
-            votes_for: u256,
-            votes_against: u256,
-            votes_abstain: u256,
+            votes: Array<u256>,
             payload: Array<felt252>
         ) {
             self.space_manager.assert_only_spaces();
+
+            assert(votes.len() == 3, 'Invalid votes array length');
+            let votes_against = *votes[0];
+            let votes_for = *votes[1];
+            let votes_abstain = *votes[2];
             let proposal_status = self
                 .simple_quorum
                 .get_proposal_status(@proposal, votes_for, votes_against, votes_abstain);
+
             assert(
                 proposal_status == ProposalStatus::Accepted(())
                     || proposal_status == ProposalStatus::VotingPeriodAccepted(()),
@@ -200,12 +204,12 @@ mod TimelockExecutionStrategy {
         }
 
         fn get_proposal_status(
-            self: @ContractState,
-            proposal: Proposal,
-            votes_for: u256,
-            votes_against: u256,
-            votes_abstain: u256,
+            self: @ContractState, proposal: Proposal, votes: Array<u256>
         ) -> ProposalStatus {
+            assert(votes.len() == 3, 'Invalid votes array length');
+            let votes_against = *votes[0];
+            let votes_for = *votes[1];
+            let votes_abstain = *votes[2];
             self
                 .simple_quorum
                 .get_proposal_status(@proposal, votes_for, votes_against, votes_abstain)

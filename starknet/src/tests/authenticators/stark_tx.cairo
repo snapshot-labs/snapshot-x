@@ -13,8 +13,7 @@ mod tests {
     use sx::tests::mocks::vanilla_proposal_validation::VanillaProposalValidationStrategy;
     use sx::tests::setup::setup::setup::{setup, deploy};
     use sx::types::{
-        UserAddress, Strategy, IndexedStrategy, Choice, FinalizationStatus, Proposal,
-        UpdateSettingsCalldata
+        UserAddress, Strategy, IndexedStrategy, FinalizationStatus, Proposal, UpdateSettingsCalldata
     };
     use sx::tests::utils::strategy_trait::{StrategyImpl};
 
@@ -60,12 +59,18 @@ mod tests {
             vanilla_execution_strategy_address
         );
         let author = contract_address_const::<0x5678>();
+        let choices = 3;
 
         // Create Proposal
         testing::set_contract_address(author);
         authenticator
             .authenticate_propose(
-                space.contract_address, author, array![], vanilla_execution_strategy, array![]
+                space.contract_address,
+                author,
+                choices,
+                array![],
+                vanilla_execution_strategy,
+                array![]
             );
 
         assert(space.next_proposal_id() == 2_u256, 'next_proposal_id should be 2');
@@ -82,14 +87,19 @@ mod tests {
         testing::set_contract_address(author);
         authenticator
             .authenticate_update_proposal(
-                space.contract_address, author, proposal_id, new_execution_strategy, array![],
+                space.contract_address,
+                author,
+                proposal_id,
+                choices,
+                new_execution_strategy,
+                array![],
             );
 
         // Increasing block timestamp by 1 to pass voting delay
         testing::set_block_timestamp(1_u64);
 
         let voter = contract_address_const::<0x8765>();
-        let choice = Choice::For(());
+        let choice = 1;
         let mut user_voting_strategies = array![IndexedStrategy { index: 0_u8, params: array![] }];
 
         // Vote on Proposal
@@ -128,12 +138,18 @@ mod tests {
             vanilla_execution_strategy_address
         );
         let author = contract_address_const::<0x5678>();
+        let choices = 3;
 
         // Create Proposal not from author account
         testing::set_contract_address(config.owner);
         authenticator
             .authenticate_propose(
-                space.contract_address, author, array![], vanilla_execution_strategy, array![],
+                space.contract_address,
+                author,
+                choices,
+                array![],
+                vanilla_execution_strategy,
+                array![],
             );
     }
 
@@ -160,12 +176,18 @@ mod tests {
             vanilla_execution_strategy_address
         );
         let author = contract_address_const::<0x5678>();
+        let choices = 3;
 
         // Create Proposal
         testing::set_contract_address(author);
         authenticator
             .authenticate_propose(
-                space.contract_address, author, array![], vanilla_execution_strategy, array![],
+                space.contract_address,
+                author,
+                choices,
+                array![],
+                vanilla_execution_strategy,
+                array![],
             );
 
         assert(space.next_proposal_id() == 2_u256, 'next_proposal_id should be 2');
@@ -183,7 +205,12 @@ mod tests {
         testing::set_contract_address(config.owner);
         authenticator
             .authenticate_update_proposal(
-                space.contract_address, author, proposal_id, new_execution_strategy, array![]
+                space.contract_address,
+                author,
+                proposal_id,
+                choices,
+                new_execution_strategy,
+                array![]
             );
     }
 
@@ -210,12 +237,18 @@ mod tests {
             vanilla_execution_strategy_address
         );
         let author = contract_address_const::<0x5678>();
+        let choices = 3;
 
         // Create Proposal
         testing::set_contract_address(author);
         authenticator
             .authenticate_propose(
-                space.contract_address, author, array![], vanilla_execution_strategy, array![],
+                space.contract_address,
+                author,
+                choices,
+                array![],
+                vanilla_execution_strategy,
+                array![],
             );
 
         assert(space.next_proposal_id() == 2_u256, 'next_proposal_id should be 2');
@@ -228,18 +261,24 @@ mod tests {
         let new_execution_strategy = Strategy {
             address: vanilla_execution_strategy_address, params: new_payload.clone()
         };
+        let choices = 3;
 
         testing::set_contract_address(author);
         authenticator
             .authenticate_update_proposal(
-                space.contract_address, author, proposal_id, new_execution_strategy, array![]
+                space.contract_address,
+                author,
+                proposal_id,
+                choices,
+                new_execution_strategy,
+                array![]
             );
 
         // Increasing block timestamp by 1 to pass voting delay
         testing::set_block_timestamp(1_u64);
 
         let voter = contract_address_const::<0x8765>();
-        let choice = Choice::For(());
+        let choice = 1;
         let mut user_voting_strategies = array![IndexedStrategy { index: 0_u8, params: array![] }];
 
         // Vote on Proposal not from voter account

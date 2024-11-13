@@ -13,8 +13,7 @@ mod tests {
     use sx::tests::mocks::no_voting_power::NoVotingPowerVotingStrategy;
     use sx::tests::setup::setup::setup::{setup, deploy};
     use sx::types::{
-        UserAddress, Strategy, IndexedStrategy, Choice, FinalizationStatus, Proposal,
-        UpdateSettingsCalldata
+        UserAddress, Strategy, IndexedStrategy, FinalizationStatus, Proposal, UpdateSettingsCalldata
     };
     use sx::tests::utils::strategy_trait::{StrategyImpl};
     use sx::utils::constants::{PROPOSE_SELECTOR, VOTE_SELECTOR, UPDATE_PROPOSAL_SELECTOR};
@@ -42,8 +41,10 @@ mod tests {
         execution_strategy: Strategy
     ) {
         let author = UserAddress::Starknet(starknet::contract_address_const::<0x5678>());
+        let choices: u128 = 3;
         let mut propose_calldata = array![];
         author.serialize(ref propose_calldata);
+        choices.serialize(ref propose_calldata);
         ArrayTrait::<felt252>::new().serialize(ref propose_calldata);
         execution_strategy.serialize(ref propose_calldata);
         ArrayTrait::<felt252>::new().serialize(ref propose_calldata);
@@ -56,7 +57,7 @@ mod tests {
         space_address: ContractAddress,
         proposal_id: u256,
         voter: UserAddress,
-        choice: Choice,
+        choice: u128,
         voting_power: u256,
         metadata_uri: Span<felt252>,
     ) {
@@ -89,7 +90,7 @@ mod tests {
         voter.serialize(ref vote_calldata);
         let proposal_id = 1_u256;
         proposal_id.serialize(ref vote_calldata);
-        let choice = Choice::For(());
+        let choice = 1;
         choice.serialize(ref vote_calldata);
         let mut user_voting_strategies = array![IndexedStrategy { index: 0_u8, params: array![] }];
         user_voting_strategies.serialize(ref vote_calldata);
@@ -101,9 +102,9 @@ mod tests {
 
         authenticator.authenticate(space.contract_address, VOTE_SELECTOR, vote_calldata);
         assert(space.vote_registry(proposal_id, voter) == true, 'vote registry incorrect');
-        assert(space.vote_power(proposal_id, Choice::For(())) == 1, 'Vote power should be 1');
-        assert(space.vote_power(proposal_id, Choice::Against(())) == 0, 'Vote power should be 0');
-        assert(space.vote_power(proposal_id, Choice::Abstain(())) == 0, 'Vote power should be 0');
+        assert(space.vote_power(proposal_id, 1) == 1, 'Vote power should be 1');
+        assert(space.vote_power(proposal_id, 0) == 0, 'Vote power should be 0');
+        assert(space.vote_power(proposal_id, 2) == 0, 'Vote power should be 0');
         assert_vote_emitted_and_correct(
             space.contract_address, proposal_id, voter, choice, 1, metadata_uri.span()
         );
@@ -130,7 +131,7 @@ mod tests {
         voter.serialize(ref vote_calldata);
         let proposal_id = 1_u256;
         proposal_id.serialize(ref vote_calldata);
-        let choice = Choice::Against(());
+        let choice = 0;
         choice.serialize(ref vote_calldata);
         let mut user_voting_strategies = array![IndexedStrategy { index: 0_u8, params: array![] }];
         user_voting_strategies.serialize(ref vote_calldata);
@@ -142,9 +143,9 @@ mod tests {
 
         authenticator.authenticate(space.contract_address, VOTE_SELECTOR, vote_calldata);
         assert(space.vote_registry(proposal_id, voter) == true, 'vote registry incorrect');
-        assert(space.vote_power(proposal_id, Choice::For(())) == 0, 'Vote power should be 0');
-        assert(space.vote_power(proposal_id, Choice::Against(())) == 1, 'Vote power should be 1');
-        assert(space.vote_power(proposal_id, Choice::Abstain(())) == 0, 'Vote power should be 0');
+        assert(space.vote_power(proposal_id, 1) == 0, 'Vote power should be 0');
+        assert(space.vote_power(proposal_id, 0) == 1, 'Vote power should be 1');
+        assert(space.vote_power(proposal_id, 2) == 0, 'Vote power should be 0');
         assert_vote_emitted_and_correct(
             space.contract_address, proposal_id, voter, choice, 1, metadata_uri.span()
         );
@@ -171,7 +172,7 @@ mod tests {
         voter.serialize(ref vote_calldata);
         let proposal_id = 1_u256;
         proposal_id.serialize(ref vote_calldata);
-        let choice = Choice::Abstain(());
+        let choice = 2;
         choice.serialize(ref vote_calldata);
         let mut user_voting_strategies = array![IndexedStrategy { index: 0_u8, params: array![] }];
         user_voting_strategies.serialize(ref vote_calldata);
@@ -182,9 +183,9 @@ mod tests {
         utils::drop_events(space.contract_address, 4);
         authenticator.authenticate(space.contract_address, VOTE_SELECTOR, vote_calldata);
         assert(space.vote_registry(proposal_id, voter) == true, 'vote registry incorrect');
-        assert(space.vote_power(proposal_id, Choice::For(())) == 0, 'Vote power should be 0');
-        assert(space.vote_power(proposal_id, Choice::Against(())) == 0, 'Vote power should be 0');
-        assert(space.vote_power(proposal_id, Choice::Abstain(())) == 1, 'Vote power should be 1');
+        assert(space.vote_power(proposal_id, 1) == 0, 'Vote power should be 0');
+        assert(space.vote_power(proposal_id, 0) == 0, 'Vote power should be 0');
+        assert(space.vote_power(proposal_id, 2) == 1, 'Vote power should be 1');
         assert_vote_emitted_and_correct(
             space.contract_address, proposal_id, voter, choice, 1, metadata_uri.span()
         );
@@ -211,7 +212,7 @@ mod tests {
         voter.serialize(ref vote_calldata);
         let proposal_id = 1_u256;
         proposal_id.serialize(ref vote_calldata);
-        let choice = Choice::For(());
+        let choice = 1;
         choice.serialize(ref vote_calldata);
         let mut user_voting_strategies = array![IndexedStrategy { index: 0_u8, params: array![] }];
         user_voting_strategies.serialize(ref vote_calldata);
@@ -244,7 +245,7 @@ mod tests {
         voter.serialize(ref vote_calldata);
         let proposal_id = 1_u256;
         proposal_id.serialize(ref vote_calldata);
-        let choice = Choice::For(());
+        let choice = 1;
         choice.serialize(ref vote_calldata);
         let mut user_voting_strategies = array![IndexedStrategy { index: 0_u8, params: array![] }];
         user_voting_strategies.serialize(ref vote_calldata);
@@ -279,7 +280,7 @@ mod tests {
         voter.serialize(ref vote_calldata);
         let proposal_id = 1_u256;
         proposal_id.serialize(ref vote_calldata);
-        let choice = Choice::For(());
+        let choice = 1;
         choice.serialize(ref vote_calldata);
         let mut user_voting_strategies = array![IndexedStrategy { index: 0_u8, params: array![] }];
         user_voting_strategies.serialize(ref vote_calldata);
@@ -309,7 +310,7 @@ mod tests {
 
         let voter = UserAddress::Starknet(starknet::contract_address_const::<0x8765>());
         let proposal_id = 1_u256;
-        let choice = Choice::For(());
+        let choice = 1;
         let mut user_voting_strategies = array![IndexedStrategy { index: 0_u8, params: array![] }];
         let metadata_uri = array![];
 
@@ -339,7 +340,7 @@ mod tests {
         voter.serialize(ref vote_calldata);
         let proposal_id = 1_u256;
         proposal_id.serialize(ref vote_calldata);
-        let choice = Choice::For(());
+        let choice = 1;
         choice.serialize(ref vote_calldata);
         let mut user_voting_strategies = array![IndexedStrategy { index: 0_u8, params: array![] }];
         user_voting_strategies.serialize(ref vote_calldata);
@@ -388,7 +389,7 @@ mod tests {
         voter.serialize(ref vote_calldata);
         let proposal_id = 1_u256;
         proposal_id.serialize(ref vote_calldata);
-        let choice = Choice::For(());
+        let choice = 1;
         choice.serialize(ref vote_calldata);
         let mut user_voting_strategies = array![
             IndexedStrategy { index: 1_u8, params: array![] }
@@ -422,7 +423,7 @@ mod tests {
         voter.serialize(ref vote_calldata);
         let proposal_id = 42_u256; // inexistent proposal
         proposal_id.serialize(ref vote_calldata);
-        let choice = Choice::For(());
+        let choice = 1;
         choice.serialize(ref vote_calldata);
         let mut user_voting_strategies = array![IndexedStrategy { index: 0_u8, params: array![] }];
         user_voting_strategies.serialize(ref vote_calldata);

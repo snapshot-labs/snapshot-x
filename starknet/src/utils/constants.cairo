@@ -17,22 +17,22 @@ const DOMAIN_HASH_HIGH: u128 = 0x6192106f129ce05c9075d319c1fa6ea9;
 const DOMAIN_HASH_LOW: u128 = 0xb3ae37cbd0c1ef92e2be7137bb07baa1;
 
 // keccak256(
-//    "Propose(uint256 chainId,uint256 authenticator,uint256 space,address author,uint256[] metadataUri,Strategy executionStrategy,uint256[] userProposalValidationParams,uint256 salt)Strategy(uint256 address,uint256[] params)"
+//    "Propose(uint256 chainId,uint256 authenticator,uint256 space,address author,uint128 choices,uint256[] metadataUri,Strategy executionStrategy,uint256[] userProposalValidationParams,uint256 salt)Strategy(uint256 address,uint256[] params)"
 //         )
-const PROPOSE_TYPEHASH_HIGH: u128 = 0x04ede461dac4a3b480afeb3954345a3e;
-const PROPOSE_TYPEHASH_LOW: u128 = 0x86377d7136dad5401c9e3ff24c7a0f07;
+const PROPOSE_TYPEHASH_HIGH: u128 = 0xcfa442a702307331eaf2d45aa6c8da70;
+const PROPOSE_TYPEHASH_LOW: u128 = 0xa0113ec543fb427277f972cfecb6a19a;
 
 // keccak256(
-//    "Vote(uint256 chainId,uint256 authenticator,uint256 space,address voter,uint256 proposalId,uint256 choice,IndexedStrategy[] userVotingStrategies,uint256[] metadataUri)IndexedStrategy(uint256 index,uint256[] params)"
+//    "Vote(uint256 chainId,uint256 authenticator,uint256 space,address voter,uint256 proposalId,uint128 choice,IndexedStrategy[] userVotingStrategies,uint256[] metadataUri)IndexedStrategy(uint256 index,uint256[] params)"
 //         )
-const VOTE_TYPEHASH_HIGH: u128 = 0x9f141e8a6807fa0c11618a1232b75ba3;
-const VOTE_TYPEHASH_LOW: u128 = 0x298f2993575d81a3b6ec2d52ae694cb7;
+const VOTE_TYPEHASH_HIGH: u128 = 0x90609fdc19f6de4fcd7d09504bbdd134;
+const VOTE_TYPEHASH_LOW: u128 = 0x142ed1654dd447dbef520e793e53b5ec;
 
 // keccak256(
-//    "UpdateProposal(uint256 chainId,uint256 authenticator,uint256 space,address author,uint256 proposalId,Strategy executionStrategy,uint256[] metadataUri,uint256 salt)Strategy(uint256 address,uint256[] params)"
+//    "UpdateProposal(uint256 chainId,uint256 authenticator,uint256 space,address author,uint256 proposalId,uint128 choice,Strategy executionStrategy,uint256[] metadataUri,uint256 salt)Strategy(uint256 address,uint256[] params)"
 //         )
-const UPDATE_PROPOSAL_TYPEHASH_HIGH: u128 = 0x2df41899fffb50338812b0c6bb5db608;
-const UPDATE_PROPOSAL_TYPEHASH_LOW: u128 = 0x9503bccdcdb9a1ed596eea5bb5087f84;
+const UPDATE_PROPOSAL_TYPEHASH_HIGH: u128 = 0xea05b63d628d1f86ef923f9c79ebdc82;
+const UPDATE_PROPOSAL_TYPEHASH_LOW: u128 = 0x8920f878d19015413323acc61a52afb3;
 
 // keccak256("Strategy(uint256 address,uint256[] params)")
 const STRATEGY_TYPEHASH_HIGH: u128 = 0xa6cb034787a88e7219605b9db792cb9a;
@@ -49,18 +49,18 @@ const STARKNET_MESSAGE: felt252 = 'StarkNet Message';
 // StarknetKeccak('StarkNetDomain(name:felt252,version:felt252,chainId:felt252)')
 const DOMAIN_TYPEHASH: felt252 = 0x27652a980b9a4920425c858386f09477bb210dea95169abd576f5ef7c9d5ca2;
 
-// H('Propose(space:ContractAddress,author:ContractAddress,metadataUri:felt*,executionStrategy:Strategy,
+// H('Propose(space:ContractAddress,author:ContractAddress,choices:u128,metadataUri:felt*,executionStrategy:Strategy,
 //    userProposalValidationParams:felt*,salt:felt252)Strategy(address:felt252,params:felt*)')
-const PROPOSE_TYPEHASH: felt252 = 0x22175ade273c5b12630bfc15eca8c6a8eb7e2648ac63d2b9882c535f92d71b9;
+const PROPOSE_TYPEHASH: felt252 = 0x3fc8b3b886f4272c1055fdebb44f4046954215a7541edcd47b91e1155139694;
 
-// H('Vote(space:ContractAddress,voter:ContractAddress,proposalId:u256,choice:felt252,userVotingStrategies:IndexedStrategy*,
+// H('Vote(space:ContractAddress,voter:ContractAddress,proposalId:u256,choice:u128,userVotingStrategies:IndexedStrategy*,
 //    metadataUri:felt*)IndexedStrategy(index:felt252,params:felt*)u256(low:felt252,high:felt252)')
-const VOTE_TYPEHASH: felt252 = 0x1d9763f87aaaeb271287d4b9c84053d3f201ad61efc2c32a0abfb8cd42347bf;
+const VOTE_TYPEHASH: felt252 = 0xfc1b4a34a5677c923bfd0f4a3cd492ffc366819e8258b84baad19b7f19d5a3;
 
-// H('UpdateProposal(space:ContractAddress,author:ContractAddress,proposalId:u256,executionStrategy:Strategy,
+// H('UpdateProposal(space:ContractAddress,author:ContractAddress,proposalId:u256,choices:u128,executionStrategy:Strategy,
 //    metadataUri:felt*,salt:felt252)Strategy(address:felt252,params:felt*)u256(low:felt252,high:felt252)')
 const UPDATE_PROPOSAL_TYPEHASH: felt252 =
-    0x34f1b3fe98891caddfc18d9b8d3bee36be34145a6e9f7a7bb76a45038dda780;
+    0x7d25dd6a9637f321ba1758c07de86814749987de04646d641546764605b09d;
 
 // StarknetKeccak('Strategy(address:felt252,params:felt*)')
 const STRATEGY_TYPEHASH: felt252 =

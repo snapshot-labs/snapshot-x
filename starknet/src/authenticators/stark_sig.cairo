@@ -1,5 +1,5 @@
 use starknet::ContractAddress;
-use sx::types::{Strategy, IndexedStrategy, Choice};
+use sx::types::{Strategy, IndexedStrategy};
 
 #[starknet::interface]
 trait IStarkSigAuthenticator<TContractState> {
@@ -20,6 +20,7 @@ trait IStarkSigAuthenticator<TContractState> {
         signature: Array<felt252>,
         space: ContractAddress,
         author: ContractAddress,
+        choices: u128,
         metadata_uri: Array<felt252>,
         execution_strategy: Strategy,
         user_proposal_validation_params: Array<felt252>,
@@ -46,7 +47,7 @@ trait IStarkSigAuthenticator<TContractState> {
         space: ContractAddress,
         voter: ContractAddress,
         proposal_id: u256,
-        choice: Choice,
+        choice: u128,
         user_voting_strategies: Array<IndexedStrategy>,
         metadata_uri: Array<felt252>
     );
@@ -69,6 +70,7 @@ trait IStarkSigAuthenticator<TContractState> {
         space: ContractAddress,
         author: ContractAddress,
         proposal_id: u256,
+        choices: u128,
         execution_strategy: Strategy,
         metadata_uri: Array<felt252>,
         salt: felt252
@@ -80,7 +82,7 @@ mod StarkSigAuthenticator {
     use super::IStarkSigAuthenticator;
     use starknet::{ContractAddress, info};
     use sx::interfaces::{ISpaceDispatcher, ISpaceDispatcherTrait};
-    use sx::types::{Strategy, IndexedStrategy, UserAddress, Choice};
+    use sx::types::{Strategy, IndexedStrategy, UserAddress};
     use sx::utils::snip12::SNIP12Component;
 
     component!(path: SNIP12Component, storage: snip12, event: SNIP12Event);
@@ -107,6 +109,7 @@ mod StarkSigAuthenticator {
             signature: Array<felt252>,
             space: ContractAddress,
             author: ContractAddress,
+            choices: u128,
             metadata_uri: Array<felt252>,
             execution_strategy: Strategy,
             user_proposal_validation_params: Array<felt252>,
@@ -120,6 +123,7 @@ mod StarkSigAuthenticator {
                     signature,
                     space,
                     author,
+                    choices,
                     metadata_uri.span(),
                     @execution_strategy,
                     user_proposal_validation_params.span(),
@@ -130,6 +134,7 @@ mod StarkSigAuthenticator {
             ISpaceDispatcher { contract_address: space }
                 .propose(
                     UserAddress::Starknet(author),
+                    choices,
                     metadata_uri,
                     execution_strategy,
                     user_proposal_validation_params,
@@ -142,7 +147,7 @@ mod StarkSigAuthenticator {
             space: ContractAddress,
             voter: ContractAddress,
             proposal_id: u256,
-            choice: Choice,
+            choice: u128,
             user_voting_strategies: Array<IndexedStrategy>,
             metadata_uri: Array<felt252>
         ) {
@@ -176,6 +181,7 @@ mod StarkSigAuthenticator {
             space: ContractAddress,
             author: ContractAddress,
             proposal_id: u256,
+            choices: u128,
             execution_strategy: Strategy,
             metadata_uri: Array<felt252>,
             salt: felt252
@@ -189,6 +195,7 @@ mod StarkSigAuthenticator {
                     space,
                     author,
                     proposal_id,
+                    choices,
                     @execution_strategy,
                     metadata_uri.span(),
                     salt
@@ -197,7 +204,11 @@ mod StarkSigAuthenticator {
             self._used_salts.write((author, salt), true);
             ISpaceDispatcher { contract_address: space }
                 .update_proposal(
-                    UserAddress::Starknet(author), proposal_id, execution_strategy, metadata_uri
+                    UserAddress::Starknet(author),
+                    proposal_id,
+                    choices,
+                    execution_strategy,
+                    metadata_uri
                 );
         }
     }

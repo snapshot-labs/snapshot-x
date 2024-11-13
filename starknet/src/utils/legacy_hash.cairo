@@ -1,13 +1,6 @@
 use hash::LegacyHash;
 use starknet::EthAddress;
-use sx::types::{Choice, UserAddress};
-
-impl LegacyHashChoice of LegacyHash<Choice> {
-    fn hash(state: felt252, value: Choice) -> felt252 {
-        let choice: u8 = value.into();
-        LegacyHash::hash(state, choice)
-    }
-}
+use sx::types::{UserAddress};
 
 impl LegacyHashEthAddress of LegacyHash<EthAddress> {
     fn hash(state: felt252, value: EthAddress) -> felt252 {
@@ -37,14 +30,6 @@ impl LegacyHashUserAddress of LegacyHash<UserAddress> {
             UserAddress::Ethereum(address) => LegacyHash::<felt252>::hash(state, address.into()),
             UserAddress::Custom(address) => LegacyHash::<u256>::hash(state, address),
         }
-    }
-}
-
-impl LegacyHashVotePower of LegacyHash<(u256, Choice)> {
-    fn hash(state: felt252, value: (u256, Choice)) -> felt252 {
-        let (proposal_id, choice) = value;
-        let state = LegacyHash::hash(state, proposal_id);
-        LegacyHash::hash(state, choice)
     }
 }
 

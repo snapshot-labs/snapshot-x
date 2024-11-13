@@ -85,9 +85,6 @@ mod interfaces {
 }
 
 mod types {
-    mod choice;
-    use choice::Choice;
-
     mod finalization_status;
     use finalization_status::FinalizationStatus;
 
@@ -135,7 +132,7 @@ mod utils {
 
     mod legacy_hash;
     use legacy_hash::{
-        LegacyHashEthAddress, LegacyHashChoice, LegacyHashUserAddress, LegacyHashVotePower,
+        LegacyHashEthAddress, LegacyHashUserAddress,
         LegacyHashVoteRegistry, LegacyHashSpanFelt252
     };
 
