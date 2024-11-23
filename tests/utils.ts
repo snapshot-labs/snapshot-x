@@ -151,23 +151,20 @@ export function extractMessagePayload(
       high: message_payload[12],
     }),
   };
-  const forVotes = uint256.uint256ToBN({
-    low: message_payload[13],
-    high: message_payload[14],
-  });
+  // length is stored at message_palyoad[13]
   const againstVotes = uint256.uint256ToBN({
-    low: message_payload[15],
-    high: message_payload[16],
+    low: message_payload[14],
+    high: message_payload[15],
+  });
+  const forVotes = uint256.uint256ToBN({
+    low: message_payload[16],
+    high: message_payload[17],
   });
   const abstainVotes = uint256.uint256ToBN({
-    low: message_payload[17],
-    high: message_payload[18],
+    low: message_payload[18],
+    high: message_payload[19],
   });
-  const votes = {
-    votesFor: forVotes,
-    votesAgainst: againstVotes,
-    votesAbstain: abstainVotes,
-  }
+  const votes = [againstVotes, forVotes, abstainVotes];
   return [proposalId, proposal, votes];
 }
 

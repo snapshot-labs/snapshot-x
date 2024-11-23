@@ -11,7 +11,6 @@ import {
   CairoOptionVariant,
 } from 'starknet';
 import { utils } from '@snapshot-labs/sx';
-import { check } from 'prettier';
 
 dotenv.config();
 

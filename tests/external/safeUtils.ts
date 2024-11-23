@@ -1,8 +1,7 @@
 /* eslint-disable  @typescript-eslint/no-non-null-assertion */
 /* eslint-disable  @typescript-eslint/explicit-module-boundary-types */
 
-import { Contract, BigNumberish, Signer, ethers, Typed } from 'ethers';
-import { TypedDataSigner } from '@ethersproject/abstract-signer';
+import { Contract, BigNumberish, Signer, ethers } from 'ethers';
 import { AddressZero } from '@ethersproject/constants';
 
 export const EIP712_TYPES = {
@@ -60,7 +59,7 @@ export const EIP712_SAFE_MESSAGE_TYPE = {
 
 export interface MetaTransaction {
   to: string;
-  value: string | number | BigInt;
+  value: string | number | bigint;
   data: string;
   operation: number;
 }
@@ -101,7 +100,10 @@ export const buildMultiSendSafeTx = async (
   return buildContractCall(multiSend, 'multiSend', [encodeMultiSend(txs)], nonce, true, overrides);
 };
 
-export const calculateSafeDomainSeparator = (safeAddress: string, chainId: BigNumberish): string => {
+export const calculateSafeDomainSeparator = (
+  safeAddress: string,
+  chainId: BigNumberish,
+): string => {
   return ethers.TypedDataEncoder.hashDomain({ verifyingContract: safeAddress, chainId });
 };
 
@@ -152,7 +154,9 @@ export const safeApproveHash = async (
   if (!skipOnChainApproval) {
     if (!signer.provider) throw Error('Provider required for on-chain approval');
     const chainId = (await signer.provider.getNetwork()).chainId;
-    const typedDataHash = ethers.getBytes(calculateSafeTransactionHash(await safe.getAddress(), safeTx, chainId));
+    const typedDataHash = ethers.getBytes(
+      calculateSafeTransactionHash(await safe.getAddress(), safeTx, chainId),
+    );
     const signerSafe = safe.connect(signer);
     await signerSafe.approveHash(typedDataHash);
   }
@@ -345,7 +349,7 @@ export const executeContractCallWithSigners = async (
 
 export const buildSafeTransaction = (template: {
   to: string;
-  value?: BigInt | number | string;
+  value?: bigint | number | string;
   data?: string;
   operation?: number;
   safeTxGas?: number | string;

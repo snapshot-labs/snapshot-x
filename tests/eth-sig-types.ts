@@ -15,6 +15,7 @@ export const proposeTypes = {
     { name: 'authenticator', type: 'uint256' },
     { name: 'space', type: 'uint256' },
     { name: 'author', type: 'address' },
+    { name: 'choices', type: 'uint128' },
     { name: 'metadataUri', type: 'uint256[]' },
     { name: 'executionStrategy', type: 'Strategy' },
     { name: 'userProposalValidationParams', type: 'uint256[]' },
@@ -30,7 +31,7 @@ export const voteTypes = {
     { name: 'space', type: 'uint256' },
     { name: 'voter', type: 'address' },
     { name: 'proposalId', type: 'uint256' },
-    { name: 'choice', type: 'uint256' },
+    { name: 'choice', type: 'uint128' },
     { name: 'userVotingStrategies', type: 'IndexedStrategy[]' },
     { name: 'metadataUri', type: 'uint256[]' },
   ],
@@ -44,6 +45,7 @@ export const updateProposalTypes = {
     { name: 'space', type: 'uint256' },
     { name: 'author', type: 'address' },
     { name: 'proposalId', type: 'uint256' },
+    { name: 'choices', type: 'uint128' },
     { name: 'executionStrategy', type: 'Strategy' },
     { name: 'metadataUri', type: 'uint256[]' },
     { name: 'salt', type: 'uint256' },
@@ -56,6 +58,7 @@ export interface Propose {
   authenticator: string;
   space: string;
   author: string;
+  choices: string;
   metadataUri: string[];
   executionStrategy: Strategy;
   userProposalValidationParams: string[];
@@ -79,6 +82,7 @@ export interface UpdateProposal {
   space: string;
   author: string;
   proposalId: string;
+  choices: string;
   executionStrategy: Strategy;
   metadataUri: string[];
   salt: string;

@@ -129,7 +129,11 @@ mod StarkTxAuthenticator {
 
             ISpaceDispatcher { contract_address: space }
                 .update_proposal(
-                    UserAddress::Starknet(author), proposal_id, choices, execution_strategy, metadata_uri
+                    UserAddress::Starknet(author),
+                    proposal_id,
+                    choices,
+                    execution_strategy,
+                    metadata_uri
                 );
         }
     }

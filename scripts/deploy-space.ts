@@ -1,17 +1,6 @@
 import dotenv from 'dotenv';
 import fs from 'fs';
-import {
-  defaultProvider,
-  Provider,
-  RpcProvider,
-  Account,
-  ec,
-  json,
-  CallData,
-  constants,
-  shortString,
-  cairo,
-} from 'starknet';
+import { RpcProvider, Account, json, CallData, cairo } from 'starknet';
 
 dotenv.config();
 
@@ -24,12 +13,12 @@ async function main() {
   const account = new Account(provider, accountAddress, accountPk);
 
   // OZ Votes token 18 decimals
-  const l1TokenAddress = '0xd96844c9B21CB6cCf2c236257c7fc703E43BA071'; 
+  const l1TokenAddress = '0xd96844c9B21CB6cCf2c236257c7fc703E43BA071';
 
-  // Slot index of the checkpoints mapping in the token contract, 
-  // obtained using Foundry's Cast Storage Layout tool. 
-  const slotIndex = cairo.uint256(8); 
-  
+  // Slot index of the checkpoints mapping in the token contract,
+  // obtained using Foundry's Cast Storage Layout tool.
+  const slotIndex = cairo.uint256(8);
+
   const factsRegistryAddress = '0x01b2111317EB693c3EE46633edd45A4876db14A3a53ACDBf4E5166976d8e869d';
   const timestampsRemapperAddress =
     '0x2ee57d848297bc7dfc8675111b9aa3bd3085e4038e475250770afe303b772af';
@@ -57,18 +46,17 @@ async function main() {
   const vanillaProposalValidationStrategyAddress =
     '0x2247f5d86a60833da9dd8224d8f35c60bde7f4ca3b2a6583d4918d48750f69';
 
-  // const deployResponse = await account.declareAndDeploy({
-  //   contract: evmSlotValueVotingStrategySierra,
-  //   casm: evmSlotValueVotingStrategyCasm,
-  //   constructorCalldata: CallData.compile({
-  //     timestamp_remappers: timestampsRemapperAddress,
-  //     facts_registry: factsRegistryAddress,
-  //   }),
-  // });
-  // const evmSlotValueVotingStrategyAddress = deployResponse.deploy.contract_address;
+  const deployResponse = await account.declareAndDeploy({
+    contract: evmSlotValueVotingStrategySierra,
+    casm: evmSlotValueVotingStrategyCasm,
+    constructorCalldata: CallData.compile({
+      timestamp_remappers: timestampsRemapperAddress,
+      facts_registry: factsRegistryAddress,
+    }),
+  });
+  const evmSlotValueVotingStrategyAddress = deployResponse.deploy.contract_address;
 
-  const evmSlotValueVotingStrategyAddress =
-    '0x474edaba6e88a1478d0680bb97f43f01e6a311593ddc496da58d5a7e7a647cf';
+  // const evmSlotValueVotingStrategyAddress = '0x474edaba6e88a1478d0680bb97f43f01e6a311593ddc496da58d5a7e7a647cf';
   console.log('Voting Strategy Address: ', evmSlotValueVotingStrategyAddress);
 
   const spaceDeployResponse = await account.declareAndDeploy({
@@ -80,7 +68,7 @@ async function main() {
   console.log('Space Address: ', spaceAddress);
 
   // initialize space
-  const result = await account.execute({
+  await account.execute({
     contractAddress: spaceAddress,
     entrypoint: 'initialize',
     calldata: CallData.compile({

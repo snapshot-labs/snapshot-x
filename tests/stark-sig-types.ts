@@ -26,6 +26,7 @@ export const proposeTypes = {
   Propose: [
     { name: 'space', type: 'ContractAddress' },
     { name: 'author', type: 'ContractAddress' },
+    { name: 'choices', type: 'u128' },
     { name: 'metadataUri', type: 'felt*' },
     { name: 'executionStrategy', type: 'Strategy' },
     { name: 'userProposalValidationParams', type: 'felt*' },
@@ -40,7 +41,7 @@ export const voteTypes = {
     { name: 'space', type: 'ContractAddress' },
     { name: 'voter', type: 'ContractAddress' },
     { name: 'proposalId', type: 'u256' },
-    { name: 'choice', type: 'felt252' },
+    { name: 'choice', type: 'u128' },
     { name: 'userVotingStrategies', type: 'IndexedStrategy*' },
     { name: 'metadataUri', type: 'felt*' },
   ],
@@ -54,6 +55,7 @@ export const updateProposalTypes = {
     { name: 'space', type: 'ContractAddress' },
     { name: 'author', type: 'ContractAddress' },
     { name: 'proposalId', type: 'u256' },
+    { name: 'choices', type: 'u128' },
     { name: 'executionStrategy', type: 'Strategy' },
     { name: 'metadataUri', type: 'felt*' },
     { name: 'salt', type: 'felt252' },
@@ -80,6 +82,7 @@ export interface u256 {
 export interface Propose {
   space: string;
   author: string;
+  choices: string;
   metadataUri: string[];
   executionStrategy: Strategy;
   userProposalValidationParams: string[];
@@ -99,6 +102,7 @@ export interface UpdateProposal {
   space: string;
   author: string;
   proposalId: u256;
+  choices: string;
   executionStrategy: Strategy;
   metadataUri: string[];
   salt: string;

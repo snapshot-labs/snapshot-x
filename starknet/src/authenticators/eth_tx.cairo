@@ -94,6 +94,7 @@ mod EthTxAuthenticator {
             space.serialize(ref payload);
             PROPOSE_SELECTOR.serialize(ref payload);
             author.serialize(ref payload);
+            choices.serialize(ref payload);
             metadata_uri.serialize(ref payload);
             execution_strategy.serialize(ref payload);
             user_proposal_validation_params.serialize(ref payload);
@@ -156,6 +157,7 @@ mod EthTxAuthenticator {
             UPDATE_PROPOSAL_SELECTOR.serialize(ref payload);
             author.serialize(ref payload);
             proposal_id.serialize(ref payload);
+            choices.serialize(ref payload);
             execution_strategy.serialize(ref payload);
             metadata_uri.serialize(ref payload);
             let payload_hash = poseidon::poseidon_hash_span(payload.span());

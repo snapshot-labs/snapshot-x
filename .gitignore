@@ -13,6 +13,7 @@ typechain-types/
 build/
 cache/
 out/
+cache_forge/
 
 !/broadcast
 /broadcast/*/31337/
