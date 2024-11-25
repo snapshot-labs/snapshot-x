@@ -91,5 +91,5 @@ jobs:
         working-directory: ./starknet
         run: scarb test --verbose
 
-      - name: run Hardhat tests
+      - name: Run Hardhat tests
         run: yarn test-ts
