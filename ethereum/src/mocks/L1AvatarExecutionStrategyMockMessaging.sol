@@ -107,8 +107,7 @@ contract L1AvatarExecutionStrategyMockMessaging is SimpleQuorumExecutionStrategy
         // Call to the Starknet core contract will fail if finalized proposal message was not received on L1.
         _receiveProposal(space, proposalId, proposal, votes, executionHash);
 
-        ProposalStatus proposalStatus =
-            getProposalStatus(proposal, votes[1], votes[0], votes[2]);
+        ProposalStatus proposalStatus = getProposalStatus(proposal, votes[1], votes[0], votes[2]);
         if ((proposalStatus != ProposalStatus.Accepted) && (proposalStatus != ProposalStatus.VotingPeriodAccepted)) {
             revert InvalidProposalStatus(proposalStatus);
         }

@@ -108,8 +108,7 @@ contract L1AvatarExecutionStrategy is SimpleQuorumExecutionStrategy {
         // Call to the Starknet core contract will fail if finalized proposal message was not received on L1.
         _receiveProposal(space, proposalId, proposal, votes, executionHash);
 
-        ProposalStatus proposalStatus =
-            getProposalStatus(proposal, votes[1], votes[0], votes[2]);
+        ProposalStatus proposalStatus = getProposalStatus(proposal, votes[1], votes[0], votes[2]);
         if ((proposalStatus != ProposalStatus.Accepted) && (proposalStatus != ProposalStatus.VotingPeriodAccepted)) {
             revert InvalidProposalStatus(proposalStatus);
         }
@@ -158,7 +157,7 @@ contract L1AvatarExecutionStrategy is SimpleQuorumExecutionStrategy {
 
         payload[20] = executionHash & (2 ** 128 - 1);
         payload[21] = executionHash >> 128;
- 
+
         // If proposal execution message did not exist/not received yet, then this will revert.
         IStarknetCore(starknetCore).consumeMessageFromL2(executionRelayer, payload);
     }
