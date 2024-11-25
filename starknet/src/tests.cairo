@@ -1,5 +1,6 @@
 mod authenticators {
     mod stark_tx;
+    mod bitcoin_sig;
 }
 
 mod execution_strategies {

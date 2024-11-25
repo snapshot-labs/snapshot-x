@@ -14,6 +14,7 @@ build-external-contracts = ["openzeppelin::account::account::Account", "openzepp
 [dependencies]
 openzeppelin = { git = "https://github.com/OpenZeppelin/cairo-contracts.git", version = "0.13.0" }
 starknet = ">=2.2.0"
+alexandria_math = { git = "https://github.com/keep-starknet-strange/alexandria.git" }
 
 [scripts]
 run-lib = "cairo-run src/lib.cairo"
