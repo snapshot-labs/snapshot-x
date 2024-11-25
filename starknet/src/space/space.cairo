@@ -395,7 +395,6 @@ mod Space {
 
             self._proposals.write(proposal_id, proposal);
             let votes = self.generate_votes_array(proposal_id);
-            assert(votes.len() == 3, 'ERROR');
 
             IExecutionStrategyDispatcher { contract_address: cached_proposal.execution_strategy }
                 .execute(proposal_id, cached_proposal, votes, execution_payload);
