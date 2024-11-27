@@ -14,8 +14,7 @@ mod tests {
         VanillaAuthenticator, IVanillaAuthenticatorDispatcher, IVanillaAuthenticatorDispatcherTrait
     };
     use sx::types::{
-        UserAddress, Strategy, IndexedStrategy, Choice, FinalizationStatus, Proposal,
-        UpdateSettingsCalldata
+        UserAddress, Strategy, IndexedStrategy, FinalizationStatus, Proposal, UpdateSettingsCalldata
     };
     use sx::utils::constants::{PROPOSE_SELECTOR, VOTE_SELECTOR, UPDATE_PROPOSAL_SELECTOR};
 
@@ -76,10 +75,13 @@ mod tests {
             address: timelock.contract_address, params: payload.clone()
         };
 
+        let choices: u128 = 3;
+
         // Create proposal  
         let mut propose_calldata = array![];
         let author = UserAddress::Starknet(starknet::contract_address_const::<0x5678>());
         author.serialize(ref propose_calldata);
+        choices.serialize(ref propose_calldata);
         let propose_metadata_uri: Array<felt252> = array![];
         propose_metadata_uri.serialize(ref propose_calldata);
         timelock_execution_strategy.serialize(ref propose_calldata);
@@ -96,7 +98,7 @@ mod tests {
         voter.serialize(ref vote_calldata);
         let proposal_id = space.next_proposal_id() - 1;
         proposal_id.serialize(ref vote_calldata);
-        let choice = Choice::For(());
+        let choice: u128 = 1;
         choice.serialize(ref vote_calldata);
         let mut user_voting_strategies = array![IndexedStrategy { index: 0_u8, params: array![] }];
         user_voting_strategies.serialize(ref vote_calldata);
@@ -183,12 +185,15 @@ mod tests {
         let mut payload = array![];
         array![proposal_tx].serialize(ref payload);
 
+        let choices: u128 = 3;
+
         let timelock_execution_strategy = Strategy {
             address: timelock.contract_address, params: payload.clone()
         };
         let mut propose_calldata = array![];
         let author = UserAddress::Starknet(starknet::contract_address_const::<0x5678>());
         author.serialize(ref propose_calldata);
+        choices.serialize(ref propose_calldata);
         let propose_metadata_uri: Array<felt252> = array![];
         propose_metadata_uri.serialize(ref propose_calldata);
         timelock_execution_strategy.serialize(ref propose_calldata);

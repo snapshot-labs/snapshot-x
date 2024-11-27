@@ -1,5 +1,5 @@
 use starknet::{ContractAddress, EthAddress};
-use sx::types::{Strategy, IndexedStrategy, Choice};
+use sx::types::{Strategy, IndexedStrategy};
 
 #[starknet::interface]
 trait IEthTxAuthenticator<TContractState> {
@@ -17,6 +17,7 @@ trait IEthTxAuthenticator<TContractState> {
         ref self: TContractState,
         space: ContractAddress,
         author: EthAddress,
+        choices: u128,
         metadata_uri: Array<felt252>,
         execution_strategy: Strategy,
         user_proposal_validation_params: Array<felt252>,
@@ -38,7 +39,7 @@ trait IEthTxAuthenticator<TContractState> {
         space: ContractAddress,
         voter: EthAddress,
         proposal_id: u256,
-        choice: Choice,
+        choice: u128,
         user_voting_strategies: Array<IndexedStrategy>,
         metadata_uri: Array<felt252>
     );
@@ -58,6 +59,7 @@ trait IEthTxAuthenticator<TContractState> {
         space: ContractAddress,
         author: EthAddress,
         proposal_id: u256,
+        choices: u128,
         execution_strategy: Strategy,
         metadata_uri: Array<felt252>
     );
@@ -68,7 +70,7 @@ mod EthTxAuthenticator {
     use super::IEthTxAuthenticator;
     use starknet::{ContractAddress, EthAddress, Felt252TryIntoEthAddress, EthAddressIntoFelt252,};
     use sx::interfaces::{ISpaceDispatcher, ISpaceDispatcherTrait};
-    use sx::types::{UserAddress, Strategy, IndexedStrategy, Choice};
+    use sx::types::{UserAddress, Strategy, IndexedStrategy};
     use sx::utils::constants::{PROPOSE_SELECTOR, VOTE_SELECTOR, UPDATE_PROPOSAL_SELECTOR};
 
     #[storage]
@@ -83,6 +85,7 @@ mod EthTxAuthenticator {
             ref self: ContractState,
             space: ContractAddress,
             author: EthAddress,
+            choices: u128,
             metadata_uri: Array<felt252>,
             execution_strategy: Strategy,
             user_proposal_validation_params: Array<felt252>,
@@ -91,6 +94,7 @@ mod EthTxAuthenticator {
             space.serialize(ref payload);
             PROPOSE_SELECTOR.serialize(ref payload);
             author.serialize(ref payload);
+            choices.serialize(ref payload);
             metadata_uri.serialize(ref payload);
             execution_strategy.serialize(ref payload);
             user_proposal_validation_params.serialize(ref payload);
@@ -101,6 +105,7 @@ mod EthTxAuthenticator {
             ISpaceDispatcher { contract_address: space }
                 .propose(
                     UserAddress::Ethereum(author),
+                    choices,
                     metadata_uri,
                     execution_strategy,
                     user_proposal_validation_params,
@@ -112,7 +117,7 @@ mod EthTxAuthenticator {
             space: ContractAddress,
             voter: EthAddress,
             proposal_id: u256,
-            choice: Choice,
+            choice: u128,
             user_voting_strategies: Array<IndexedStrategy>,
             metadata_uri: Array<felt252>
         ) {
@@ -143,6 +148,7 @@ mod EthTxAuthenticator {
             space: ContractAddress,
             author: EthAddress,
             proposal_id: u256,
+            choices: u128,
             execution_strategy: Strategy,
             metadata_uri: Array<felt252>
         ) {
@@ -151,6 +157,7 @@ mod EthTxAuthenticator {
             UPDATE_PROPOSAL_SELECTOR.serialize(ref payload);
             author.serialize(ref payload);
             proposal_id.serialize(ref payload);
+            choices.serialize(ref payload);
             execution_strategy.serialize(ref payload);
             metadata_uri.serialize(ref payload);
             let payload_hash = poseidon::poseidon_hash_span(payload.span());
@@ -159,7 +166,11 @@ mod EthTxAuthenticator {
 
             ISpaceDispatcher { contract_address: space }
                 .update_proposal(
-                    UserAddress::Ethereum(author), proposal_id, execution_strategy, metadata_uri
+                    UserAddress::Ethereum(author),
+                    proposal_id,
+                    choices,
+                    execution_strategy,
+                    metadata_uri
                 );
         }
     }

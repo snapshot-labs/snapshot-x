@@ -10,7 +10,7 @@ mod tests {
     use sx::tests::mocks::vanilla_execution_strategy::VanillaExecutionStrategy;
     use sx::tests::mocks::vanilla_voting_strategy::VanillaVotingStrategy;
     use sx::tests::mocks::vanilla_proposal_validation::VanillaProposalValidationStrategy;
-    use sx::types::{UserAddress, Strategy, IndexedStrategy, Choice, FinalizationStatus, Proposal,};
+    use sx::types::{UserAddress, Strategy, IndexedStrategy, FinalizationStatus, Proposal,};
     use sx::utils::constants::{PROPOSE_SELECTOR};
     use sx::tests::setup::setup::setup::{setup, deploy};
     use sx::interfaces::{
@@ -78,9 +78,11 @@ mod tests {
             address: execution_contract_address, params: execution_params.clone(),
         };
 
+        let choices: u128 = 3;
         let mut propose_calldata = array![];
         UserAddress::Starknet(starknet::contract_address_const::<0x7676>())
             .serialize(ref propose_calldata);
+        choices.serialize(ref propose_calldata);
         ArrayTrait::<felt252>::new().serialize(ref propose_calldata);
         execution_strategy.serialize(ref propose_calldata);
         ArrayTrait::<felt252>::new().serialize(ref propose_calldata);

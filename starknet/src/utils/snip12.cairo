@@ -2,9 +2,11 @@
 /// See here for more info: https://community.starknet.io/t/snip-off-chain-signatures-a-la-eip712/98029
 #[starknet::component]
 mod SNIP12Component {
+    use core::serde::Serde;
+    use core::traits::AddEq;
     use starknet::ContractAddress;
     use openzeppelin::account::interface::{AccountABIDispatcher, AccountABIDispatcherTrait};
-    use sx::types::{Strategy, IndexedStrategy, Choice};
+    use sx::types::{Strategy, IndexedStrategy};
     use sx::utils::StructHash;
     use sx::utils::constants::{
         STARKNET_MESSAGE, DOMAIN_TYPEHASH, PROPOSE_TYPEHASH, VOTE_TYPEHASH,
@@ -30,6 +32,7 @@ mod SNIP12Component {
             signature: Array<felt252>,
             space: ContractAddress,
             author: ContractAddress,
+            choices: u128,
             metadata_uri: Span<felt252>,
             execution_strategy: @Strategy,
             user_proposal_validation_params: Span<felt252>,
@@ -39,6 +42,7 @@ mod SNIP12Component {
                 .get_propose_digest(
                     space,
                     author,
+                    choices,
                     metadata_uri,
                     execution_strategy,
                     user_proposal_validation_params,
@@ -55,7 +59,7 @@ mod SNIP12Component {
             space: ContractAddress,
             voter: ContractAddress,
             proposal_id: u256,
-            choice: Choice,
+            choice: u128,
             user_voting_strategies: Span<IndexedStrategy>,
             metadata_uri: Span<felt252>
         ) {
@@ -73,13 +77,14 @@ mod SNIP12Component {
             space: ContractAddress,
             author: ContractAddress,
             proposal_id: u256,
+            choices: u128,
             execution_strategy: @Strategy,
             metadata_uri: Span<felt252>,
             salt: felt252
         ) {
             let digest: felt252 = self
                 .get_update_proposal_digest(
-                    space, author, proposal_id, execution_strategy, metadata_uri, salt
+                    space, author, proposal_id, choices, execution_strategy, metadata_uri, salt
                 );
             verify_signature(digest, signature, author);
         }
@@ -89,6 +94,7 @@ mod SNIP12Component {
             self: @ComponentState<TContractState>,
             space: ContractAddress,
             author: ContractAddress,
+            choices: u128,
             metadata_uri: Span<felt252>,
             execution_strategy: @Strategy,
             user_proposal_validation_params: Span<felt252>,
@@ -98,6 +104,7 @@ mod SNIP12Component {
             PROPOSE_TYPEHASH.serialize(ref encoded_data);
             space.serialize(ref encoded_data);
             author.serialize(ref encoded_data);
+            choices.serialize(ref encoded_data);
             metadata_uri.struct_hash().serialize(ref encoded_data);
             execution_strategy.struct_hash().serialize(ref encoded_data);
             user_proposal_validation_params.struct_hash().serialize(ref encoded_data);
@@ -111,7 +118,7 @@ mod SNIP12Component {
             space: ContractAddress,
             voter: ContractAddress,
             proposal_id: u256,
-            choice: Choice,
+            choice: u128,
             user_voting_strategies: Span<IndexedStrategy>,
             metadata_uri: Span<felt252>,
         ) -> felt252 {
@@ -133,6 +140,7 @@ mod SNIP12Component {
             space: ContractAddress,
             author: ContractAddress,
             proposal_id: u256,
+            choices: u128,
             execution_strategy: @Strategy,
             metadata_uri: Span<felt252>,
             salt: felt252
@@ -142,6 +150,7 @@ mod SNIP12Component {
             space.serialize(ref encoded_data);
             author.serialize(ref encoded_data);
             proposal_id.struct_hash().serialize(ref encoded_data);
+            choices.serialize(ref encoded_data);
             execution_strategy.struct_hash().serialize(ref encoded_data);
             metadata_uri.struct_hash().serialize(ref encoded_data);
             salt.serialize(ref encoded_data);

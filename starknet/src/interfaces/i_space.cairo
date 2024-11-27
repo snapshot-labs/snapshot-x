@@ -1,6 +1,6 @@
 use starknet::{ClassHash, ContractAddress, SyscallResult};
 use sx::types::{
-    UserAddress, Strategy, Proposal, IndexedStrategy, Choice, UpdateSettingsCalldata, ProposalStatus
+    UserAddress, Strategy, Proposal, IndexedStrategy, UpdateSettingsCalldata, ProposalStatus
 };
 
 #[starknet::interface]
@@ -41,7 +41,7 @@ trait ISpace<TContractState> {
     fn proposal_validation_strategy(self: @TContractState) -> Strategy;
 
     /// Returns the current voting power for a given choice and a given proposal id.
-    fn vote_power(self: @TContractState, proposal_id: u256, choice: Choice) -> u256;
+    fn vote_power(self: @TContractState, proposal_id: u256, choice: u128) -> u256;
 
     /// Returns whether a given user has voted on a given proposal.
     fn vote_registry(self: @TContractState, proposal_id: u256, voter: UserAddress) -> bool;
@@ -87,6 +87,7 @@ trait ISpace<TContractState> {
     fn propose(
         ref self: TContractState,
         author: UserAddress,
+        choices: u128,
         metadata_uri: Array<felt252>,
         execution_strategy: Strategy,
         user_proposal_validation_params: Array<felt252>,
@@ -106,7 +107,7 @@ trait ISpace<TContractState> {
         ref self: TContractState,
         voter: UserAddress,
         proposal_id: u256,
-        choice: Choice,
+        choice: u128,
         user_voting_strategies: Array<IndexedStrategy>,
         metadata_uri: Array<felt252>,
     );
@@ -127,6 +128,7 @@ trait ISpace<TContractState> {
         ref self: TContractState,
         author: UserAddress,
         proposal_id: u256,
+        choices: u128,
         execution_strategy: Strategy,
         metadata_uri: Array<felt252>,
     );

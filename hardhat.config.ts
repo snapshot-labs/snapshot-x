@@ -1,6 +1,5 @@
 import dotenv from 'dotenv';
 dotenv.config();
-import { task } from 'hardhat/config';
 import { HardhatUserConfig } from 'hardhat/types';
 import 'starknet';
 import '@nomicfoundation/hardhat-toolbox';

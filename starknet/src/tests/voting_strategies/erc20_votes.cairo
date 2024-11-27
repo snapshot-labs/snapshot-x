@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod tests {
+    use core::serde::Serde;
     use sx::tests::mocks::erc20_votes_preset::ERC20VotesPreset; // temporary while we wait for scarb to fix their dependencies
     use sx::interfaces::{ISpaceDispatcher, ISpaceDispatcherTrait};
     use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
@@ -16,8 +17,7 @@ mod tests {
     };
     use sx::voting_strategies::erc20_votes::ERC20VotesVotingStrategy;
     use sx::types::{
-        Choice, Proposal, IndexedStrategy, Strategy, UpdateSettingsCalldata, UserAddress,
-        UserAddressTrait
+        Proposal, IndexedStrategy, Strategy, UpdateSettingsCalldata, UserAddress, UserAddressTrait
     };
     use sx::tests::utils::strategy_trait::StrategyImpl;
     use sx::utils::constants::{PROPOSE_SELECTOR, VOTE_SELECTOR};
@@ -159,7 +159,7 @@ mod tests {
 
     #[test]
     #[available_gas(1000000000)]
-    fn scott_works() {
+    fn normal_flow_works() {
         let (config, space) = setup_space();
         let vanilla_execution_strategy = get_vanilla_execution_strategy();
         let accounts = setup_accounts(space.voting_strategies(1));
@@ -169,8 +169,10 @@ mod tests {
         };
 
         let author = UserAddress::Starknet(starknet::contract_address_const::<0x5678>());
+        let choices: u128 = 3;
         let mut propose_calldata = array::ArrayTrait::<felt252>::new();
         author.serialize(ref propose_calldata);
+        choices.serialize(ref propose_calldata);
         ArrayTrait::<felt252>::new().serialize(ref propose_calldata);
         vanilla_execution_strategy.serialize(ref propose_calldata);
         ArrayTrait::<felt252>::new().serialize(ref propose_calldata);
@@ -187,7 +189,7 @@ mod tests {
         voter.serialize(ref vote_calldata);
         let proposal_id = 1_u256;
         proposal_id.serialize(ref vote_calldata);
-        let choice = Choice::For(());
+        let choice = 1;
         choice.serialize(ref vote_calldata);
         let mut user_voting_strategies = array![];
         user_voting_strategies.append(IndexedStrategy { index: 1, params: array![] });
@@ -216,8 +218,10 @@ mod tests {
         };
 
         let author = UserAddress::Starknet(starknet::contract_address_const::<0x5678>());
+        let choices: u128 = 3;
         let mut propose_calldata = array::ArrayTrait::<felt252>::new();
         author.serialize(ref propose_calldata);
+        choices.serialize(ref propose_calldata);
         ArrayTrait::<felt252>::new().serialize(ref propose_calldata);
         vanilla_execution_strategy.serialize(ref propose_calldata);
         ArrayTrait::<felt252>::new().serialize(ref propose_calldata);
@@ -234,7 +238,7 @@ mod tests {
         voter.serialize(ref vote_calldata);
         let proposal_id = 1_u256;
         proposal_id.serialize(ref vote_calldata);
-        let choice = Choice::For(());
+        let choice = 1;
         choice.serialize(ref vote_calldata);
         let mut user_voting_strategies = array![];
         user_voting_strategies.append(IndexedStrategy { index: 1, params: array![] });
@@ -266,8 +270,10 @@ mod tests {
         token_contract.delegate((starknet::contract_address_const::<0xdeadbeef>()));
 
         let author = UserAddress::Starknet(starknet::contract_address_const::<0x5678>());
+        let choices: u128 = 3;
         let mut propose_calldata = array::ArrayTrait::<felt252>::new();
         author.serialize(ref propose_calldata);
+        choices.serialize(ref propose_calldata);
         ArrayTrait::<felt252>::new().serialize(ref propose_calldata);
         vanilla_execution_strategy.serialize(ref propose_calldata);
         ArrayTrait::<felt252>::new().serialize(ref propose_calldata);
@@ -284,7 +290,7 @@ mod tests {
         voter.serialize(ref vote_calldata);
         let proposal_id = 1_u256;
         proposal_id.serialize(ref vote_calldata);
-        let choice = Choice::For(());
+        let choice = 1;
         choice.serialize(ref vote_calldata);
         let mut user_voting_strategies = array![];
         user_voting_strategies.append(IndexedStrategy { index: 1, params: array![] });

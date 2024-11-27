@@ -100,15 +100,14 @@ contract L1AvatarExecutionStrategyMockMessaging is SimpleQuorumExecutionStrategy
         uint256 space,
         uint256 proposalId,
         Proposal memory proposal,
-        Votes memory votes,
+        uint256[] memory votes,
         uint256 executionHash,
         MetaTransaction[] memory transactions
     ) external onlySpace(space) {
         // Call to the Starknet core contract will fail if finalized proposal message was not received on L1.
         _receiveProposal(space, proposalId, proposal, votes, executionHash);
 
-        ProposalStatus proposalStatus =
-            getProposalStatus(proposal, votes.votesFor, votes.votesAgainst, votes.votesAbstain);
+        ProposalStatus proposalStatus = getProposalStatus(proposal, votes[1], votes[0], votes[2]);
         if ((proposalStatus != ProposalStatus.Accepted) && (proposalStatus != ProposalStatus.VotingPeriodAccepted)) {
             revert InvalidProposalStatus(proposalStatus);
         }
@@ -124,11 +123,11 @@ contract L1AvatarExecutionStrategyMockMessaging is SimpleQuorumExecutionStrategy
         uint256 space,
         uint256 proposalId,
         Proposal memory proposal,
-        Votes memory votes,
+        uint256[] memory votes,
         uint256 executionHash
     ) internal {
         // The Cairo serialization of the payload sent from L2
-        uint256[] memory payload = new uint256[](21);
+        uint256[] memory payload = new uint256[](22);
         payload[0] = space;
         payload[1] = proposalId & (2 ** 128 - 1);
         payload[2] = proposalId >> 128;
@@ -143,17 +142,19 @@ contract L1AvatarExecutionStrategyMockMessaging is SimpleQuorumExecutionStrategy
         payload[11] = proposal.activeVotingStrategies & (2 ** 128 - 1);
         payload[12] = proposal.activeVotingStrategies >> 128;
 
-        payload[13] = votes.votesFor & (2 ** 128 - 1);
-        payload[14] = votes.votesFor >> 128;
+        payload[13] = 3;
 
-        payload[15] = votes.votesAgainst & (2 ** 128 - 1);
-        payload[16] = votes.votesAgainst >> 128;
+        payload[14] = votes[0] & (2 ** 128 - 1);
+        payload[15] = votes[0] >> 128;
 
-        payload[17] = votes.votesAbstain & (2 ** 128 - 1);
-        payload[18] = votes.votesAbstain >> 128;
+        payload[16] = votes[1] & (2 ** 128 - 1);
+        payload[17] = votes[1] >> 128;
 
-        payload[19] = executionHash & (2 ** 128 - 1);
-        payload[20] = executionHash >> 128;
+        payload[18] = votes[2] & (2 ** 128 - 1);
+        payload[19] = votes[2] >> 128;
+
+        payload[20] = executionHash & (2 ** 128 - 1);
+        payload[21] = executionHash >> 128;
 
         // If proposal execution message did not exist/not received yet, then this will revert.
         MockStarknetMessaging(starknetCore).consumeMessageFromL2(executionRelayer, payload);

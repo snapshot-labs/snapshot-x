@@ -1,9 +1,19 @@
 import dotenv from 'dotenv';
 import { expect } from 'chai';
 import { HttpNetworkConfig } from 'hardhat/types';
-import { RpcProvider as StarknetRpcProvider, Contract as StarknetContract, Account as StarknetAccount, shortString, Uint256, uint256, CairoCustomEnum } from 'starknet';
+import {
+  RpcProvider as StarknetRpcProvider,
+  Contract as StarknetContract,
+  Account as StarknetAccount,
+  shortString,
+  Uint256,
+  uint256,
+} from 'starknet';
 import { Contract as EthContract } from 'ethers';
-import { Devnet as StarknetDevnet, DevnetProvider as StarknetDevnetProvider } from 'starknet-devnet';
+import {
+  Devnet as StarknetDevnet,
+  DevnetProvider as StarknetDevnetProvider,
+} from 'starknet-devnet';
 import { ethers, config } from 'hardhat';
 
 import {
@@ -20,6 +30,8 @@ dotenv.config();
 const eth_network: string = (config.networks.ethereumLocal as HttpNetworkConfig).url;
 const account_address = process.env.ADDRESS || '';
 const account_pk = process.env.PK || '';
+
+const choices = '0x3';
 
 describe('L1 Avatar Execution', function () {
   this.timeout(1000000);
@@ -52,19 +64,31 @@ describe('L1 Avatar Execution', function () {
   const _metadata_uri = [];
   const _dao_uri = [];
 
-
   before(async function () {
     const devnetConfig = {
-      args: ["--seed", "42", "--lite-mode", "--dump-on", "request", "--dump-path", "./dump.pkl", "--host", "127.0.0.1", "--port", "5050"],
+      args: [
+        '--seed',
+        '42',
+        '--lite-mode',
+        '--dump-on',
+        'request',
+        '--dump-path',
+        './dump.pkl',
+        '--host',
+        '127.0.0.1',
+        '--port',
+        '5050',
+      ],
     };
-    console.log("Spawning devnet...");
+    console.log('Spawning devnet...');
     starknetDevnet = await StarknetDevnet.spawnVersion('v0.2.0-rc.3', devnetConfig);
     starknetDevnetProvider = new StarknetDevnetProvider();
 
-    console.log("Loading L1 Messaging Contract");
-    const messagingLoadResponse = await starknetDevnetProvider.postman.loadL1MessagingContract(eth_network);
+    console.log('Loading L1 Messaging Contract');
+    const messagingLoadResponse =
+      await starknetDevnetProvider.postman.loadL1MessagingContract(eth_network);
     mockMessagingContractAddress = messagingLoadResponse.messaging_contract_address;
-    console.log("mock messaging contract", mockMessagingContractAddress);
+    console.log('mock messaging contract', mockMessagingContractAddress);
 
     provider = new StarknetRpcProvider({ nodeUrl: starknetDevnet.provider.url });
 
@@ -72,48 +96,96 @@ describe('L1 Avatar Execution', function () {
     account = new StarknetAccount(provider, account_address, account_pk);
 
     // Deploy the Stark Sig Authenticator
-    console.log("Deploying Stark Tx Authenticator...");
-    const { sierraCode: auth_sierra, casmCode: auth_casm } = await getCompiledCode('sx_StarkTxAuthenticator');
-    const auth_response = await account.declareAndDeploy({ contract: auth_sierra, casm: auth_casm });
-    starkTxAuthenticator = new StarknetContract(auth_sierra.abi, auth_response.deploy.contract_address, provider);
-    console.log("Stark Eth Authenticator: ", starkTxAuthenticator.address);
+    console.log('Deploying Stark Tx Authenticator...');
+    const { sierraCode: auth_sierra, casmCode: auth_casm } =
+      await getCompiledCode('sx_StarkTxAuthenticator');
+    const auth_response = await account.declareAndDeploy({
+      contract: auth_sierra,
+      casm: auth_casm,
+    });
+    starkTxAuthenticator = new StarknetContract(
+      auth_sierra.abi,
+      auth_response.deploy.contract_address,
+      provider,
+    );
+    console.log('Stark Eth Authenticator: ', starkTxAuthenticator.address);
 
     // Deploy the Vanilla Voting strategy
-    console.log("Deploying Voting Strategy...");
-    const { sierraCode: voting_sierra, casmCode: voting_casm } = await getCompiledCode('sx_VanillaVotingStrategy');
-    const voting_response = await account.declareAndDeploy({ contract: voting_sierra, casm: voting_casm });
-    vanillaVotingStrategy = new StarknetContract(voting_sierra.abi, voting_response.deploy.contract_address, provider);
-    console.log("Vanilla Voting Strategy: ", vanillaVotingStrategy.address);
+    console.log('Deploying Voting Strategy...');
+    const { sierraCode: voting_sierra, casmCode: voting_casm } = await getCompiledCode(
+      'sx_VanillaVotingStrategy',
+    );
+    const voting_response = await account.declareAndDeploy({
+      contract: voting_sierra,
+      casm: voting_casm,
+    });
+    vanillaVotingStrategy = new StarknetContract(
+      voting_sierra.abi,
+      voting_response.deploy.contract_address,
+      provider,
+    );
+    console.log('Vanilla Voting Strategy: ', vanillaVotingStrategy.address);
 
     // Deploy the Vanilla Proposal Validation strategy
-    console.log("Deploying Validation Strategy...");
-    const { sierraCode: proposal_sierra, casmCode: proposal_casm } = await getCompiledCode('sx_VanillaProposalValidationStrategy');
-    const proposal_response = await account.declareAndDeploy({ contract: proposal_sierra, casm: proposal_casm });
-    vanillaProposalValidationStrategy = new StarknetContract(proposal_sierra.abi, proposal_response.deploy.contract_address, provider);
-    console.log("Vanilla Proposal Validation Strategy: ", vanillaProposalValidationStrategy.address);
+    console.log('Deploying Validation Strategy...');
+    const { sierraCode: proposal_sierra, casmCode: proposal_casm } = await getCompiledCode(
+      'sx_VanillaProposalValidationStrategy',
+    );
+    const proposal_response = await account.declareAndDeploy({
+      contract: proposal_sierra,
+      casm: proposal_casm,
+    });
+    vanillaProposalValidationStrategy = new StarknetContract(
+      proposal_sierra.abi,
+      proposal_response.deploy.contract_address,
+      provider,
+    );
+    console.log(
+      'Vanilla Proposal Validation Strategy: ',
+      vanillaProposalValidationStrategy.address,
+    );
 
     // Deploy the EthRelayer
-    console.log("Deploying Eth Relayer...");
-    const { sierraCode: relayer_sierra, casmCode: relayer_casm } = await getCompiledCode('sx_EthRelayerExecutionStrategy');
-    const relayer_response = await account.declareAndDeploy({ contract: relayer_sierra, casm: relayer_casm });
-    ethRelayer = new StarknetContract(relayer_sierra.abi, relayer_response.deploy.contract_address, provider);
-    console.log("Eth Relayer: ", ethRelayer.address);
+    console.log('Deploying Eth Relayer...');
+    const { sierraCode: relayer_sierra, casmCode: relayer_casm } = await getCompiledCode(
+      'sx_EthRelayerExecutionStrategy',
+    );
+    const relayer_response = await account.declareAndDeploy({
+      contract: relayer_sierra,
+      casm: relayer_casm,
+    });
+    ethRelayer = new StarknetContract(
+      relayer_sierra.abi,
+      relayer_response.deploy.contract_address,
+      provider,
+    );
+    console.log('Eth Relayer: ', ethRelayer.address);
 
     // Deploy the Space
-    console.log("Deploying Space...");
+    console.log('Deploying Space...');
     const { sierraCode: space_sierra, casmCode: space_casm } = await getCompiledCode('sx_Space');
-    const space_response = await account.declareAndDeploy({ contract: space_sierra, casm: space_casm });
-    space = new StarknetContract(space_sierra.abi, space_response.deploy.contract_address, provider);
-    console.log("Space: ", space.address);
+    const space_response = await account.declareAndDeploy({
+      contract: space_sierra,
+      casm: space_casm,
+    });
+    space = new StarknetContract(
+      space_sierra.abi,
+      space_response.deploy.contract_address,
+      provider,
+    );
+    console.log('Space: ', space.address);
 
     // Connect with our account
     space.connect(account);
 
-    _proposal_validation_strategy = { address: vanillaProposalValidationStrategy.address, params: [] };
+    _proposal_validation_strategy = {
+      address: vanillaProposalValidationStrategy.address,
+      params: [],
+    };
     _voting_strategies = [{ address: vanillaVotingStrategy.address, params: [] }];
     _authenticators = [starkTxAuthenticator.address];
 
-    console.log("Initializing space...");
+    console.log('Initializing space...');
     const initializeRes = await space.initialize(
       _owner,
       _min_voting_duration,
@@ -125,14 +197,15 @@ describe('L1 Avatar Execution', function () {
       _voting_strategies_metadata_uri,
       _authenticators,
       _metadata_uri,
-      _dao_uri);
+      _dao_uri,
+    );
     await provider.waitForTransaction(initializeRes.transaction_hash);
-    console.log("Space initialized");
+    console.log('Space initialized');
 
     // Dumping the Starknet state so it can be loaded at the same point for each test
-    console.log("Dumping state...");
+    console.log('Dumping state...');
     await starknetDevnet.provider.dump('dump.pkl');
-    console.log("State dumped");
+    console.log('State dumped');
 
     // Ethereum setup
     const signers = await ethers.getSigners();
@@ -146,12 +219,16 @@ describe('L1 Avatar Execution', function () {
       ethRelayer.address,
       quorum,
     ));
+    console.log('type: ', await l1AvatarExecutionStrategy.getStrategyType());
   });
 
   it('should execute a proposal via the Avatar Execution Strategy connected to a Safe', async function () {
     await starknetDevnet.provider.restart();
     await starknetDevnet.provider.load('./dump.pkl');
-    await starknetDevnetProvider.postman.loadL1MessagingContract(eth_network, mockMessagingContractAddress);
+    await starknetDevnetProvider.postman.loadL1MessagingContract(
+      eth_network,
+      mockMessagingContractAddress,
+    );
     starkTxAuthenticator.connect(account);
 
     const proposalTx = {
@@ -178,54 +255,75 @@ describe('L1 Avatar Execution', function () {
     ];
     const proposalId = { low: '0x1', high: '0x0' };
 
-    console.log("Authenticating propose...");
-    const proposeRes = await starkTxAuthenticator.authenticate_propose(space.address, account.address, [], { address: ethRelayer.address, params: executionPayload }, []);
+    console.log('Authenticating propose...');
+    const proposeRes = await starkTxAuthenticator.authenticate_propose(
+      space.address,
+      account.address,
+      choices,
+      [],
+      { address: ethRelayer.address, params: executionPayload },
+      [],
+    );
     await provider.waitForTransaction(proposeRes.transaction_hash);
-    console.log("Propose authenticated");
+    console.log('Propose authenticated');
 
     await starknetDevnet.provider.increaseTime(_voting_delay);
     await increaseEthBlockchainTime(eth_network, _voting_delay);
 
-    console.log("Authenticating vote...");
-    const choice = new CairoCustomEnum({ For: {} });
-    const voteRes = await starkTxAuthenticator.authenticate_vote(space.address, account.address, proposalId, choice, [{ index: '0x0', params: [] }], []);
+    console.log('Authenticating vote...');
+    const choice = '0x1';
+    const voteRes = await starkTxAuthenticator.authenticate_vote(
+      space.address,
+      account.address,
+      proposalId,
+      choice,
+      [{ index: '0x0', params: [] }],
+      [],
+    );
     await provider.waitForTransaction(voteRes.transaction_hash);
-    console.log("Vote authenticated");
+    console.log('Vote authenticated');
 
     // Advance time so that the maxVotingTimestamp is exceeded
     await starknetDevnet.provider.increaseTime(_max_voting_duration);
     await increaseEthBlockchainTime(eth_network, _max_voting_duration);
 
     // Execute
-    console.log("Executing proposal...");
+    console.log('Executing proposal...');
     const executeRes = await space.execute(proposalId, executionPayload);
     await provider.waitForTransaction(executeRes.transaction_hash);
-    console.log("Proposal executed");
+    console.log('Proposal executed');
 
     // Propagating message to L1
-    console.log("Flushing");
+    console.log('Flushing');
     const flushL2Response = await starknetDevnetProvider.postman.flush();
     const message_payload = flushL2Response.messages_to_l1[0].payload;
 
     // Proposal data can either be extracted from the message sent to L1 (as done here) or pulled from the contract directly
     const [proposalId_, proposal, votes] = extractMessagePayload(message_payload);
 
-    console.log("Executing on L1");
-    await expect(l1AvatarExecutionStrategy.execute(
-      space.address,
-      proposalId_,
-      proposal,
-      votes,
-      executionHash,
-      [proposalTx],
-    )).to.emit(l1AvatarExecutionStrategy, 'ProposalExecuted').withArgs(space.address.toString(), proposalId_);
-    console.log("Executed on L1!");
+    console.log('Executing on L1');
+    await expect(
+      l1AvatarExecutionStrategy.execute(
+        space.address,
+        proposalId_,
+        proposal,
+        votes,
+        executionHash,
+        [proposalTx],
+      ),
+    )
+      .to.emit(l1AvatarExecutionStrategy, 'ProposalExecuted')
+      .withArgs(space.address.toString(), proposalId_);
+    console.log('Executed on L1!');
   });
 
   it('should execute a proposal with multiple txs via the Avatar Execution Strategy connected to a Safe', async function () {
     await starknetDevnet.provider.restart();
     await starknetDevnet.provider.load('./dump.pkl');
-    await starknetDevnetProvider.postman.loadL1MessagingContract(eth_network, mockMessagingContractAddress);
+    await starknetDevnetProvider.postman.loadL1MessagingContract(
+      eth_network,
+      mockMessagingContractAddress,
+    );
     await starkTxAuthenticator.connect(account);
 
     const proposalTx = {
@@ -262,28 +360,42 @@ describe('L1 Avatar Execution', function () {
     const proposalId = { low: '0x1', high: '0x0' };
 
     // Propose
-    console.log("Authenticating proposal...");
-    const proposeRes = await starkTxAuthenticator.authenticate_propose(space.address, account.address, [], { address: ethRelayer.address, params: executionPayload }, []);
+    console.log('Authenticating proposal...');
+    const proposeRes = await starkTxAuthenticator.authenticate_propose(
+      space.address,
+      account.address,
+      choices,
+      [],
+      { address: ethRelayer.address, params: executionPayload },
+      [],
+    );
     await provider.waitForTransaction(proposeRes.transaction_hash);
-    console.log("Proposal authenticated");
+    console.log('Proposal authenticated');
 
     await starknetDevnet.provider.increaseTime(_voting_delay);
     await increaseEthBlockchainTime(eth_network, _voting_delay);
 
-    console.log("Authenticating vote...");
-    const choice = new CairoCustomEnum({ For: {} });
-    const voteRes = await starkTxAuthenticator.authenticate_vote(space.address, account.address, proposalId, choice, [{ index: '0x0', params: [] }], []);
+    console.log('Authenticating vote...');
+    const choice = '0x1';
+    const voteRes = await starkTxAuthenticator.authenticate_vote(
+      space.address,
+      account.address,
+      proposalId,
+      choice,
+      [{ index: '0x0', params: [] }],
+      [],
+    );
     await provider.waitForTransaction(voteRes.transaction_hash);
-    console.log("Vote authenticated!");
+    console.log('Vote authenticated!');
 
     // Advance time so that the maxVotingTimestamp is exceeded
-    await starknetDevnet.provider.increaseTime(_max_voting_duration)
+    await starknetDevnet.provider.increaseTime(_max_voting_duration);
     await increaseEthBlockchainTime(eth_network, _max_voting_duration);
 
-    console.log("Executing proposal...");
+    console.log('Executing proposal...');
     const execRes = await space.execute(proposalId, executionPayload);
     await provider.waitForTransaction(execRes.transaction_hash);
-    console.log("Proposal executed");
+    console.log('Proposal executed');
 
     // Propagating message to L1
     const flushL2Response = await starknetDevnetProvider.postman.flush();
@@ -305,7 +417,10 @@ describe('L1 Avatar Execution', function () {
   it('should revert if the space is not whitelisted in the Avatar execution strategy', async function () {
     await starknetDevnet.provider.restart();
     await starknetDevnet.provider.load('./dump.pkl');
-    await starknetDevnetProvider.postman.loadL1MessagingContract(eth_network, mockMessagingContractAddress);
+    await starknetDevnetProvider.postman.loadL1MessagingContract(
+      eth_network,
+      mockMessagingContractAddress,
+    );
     await starkTxAuthenticator.connect(account);
 
     // Disabling the space in the execution strategy
@@ -336,29 +451,43 @@ describe('L1 Avatar Execution', function () {
 
     const proposalId = { low: '0x1', high: '0x0' };
 
-    console.log("Authenticating proposal...");
-    const proposeRes = await starkTxAuthenticator.authenticate_propose(space.address, account.address, [], { address: ethRelayer.address, params: executionPayload }, []);
+    console.log('Authenticating proposal...');
+    const proposeRes = await starkTxAuthenticator.authenticate_propose(
+      space.address,
+      account.address,
+      choices,
+      [],
+      { address: ethRelayer.address, params: executionPayload },
+      [],
+    );
     await provider.waitForTransaction(proposeRes.transaction_hash);
-    console.log("Proposal authenticated");
+    console.log('Proposal authenticated');
 
     // Advance time to voting has started.
     await starknetDevnet.provider.increaseTime(_voting_delay);
     await increaseEthBlockchainTime(eth_network, _voting_delay);
 
-    console.log("Authenticating vote...");
-    const choice = new CairoCustomEnum({ For: {} });
-    const voteRes = await starkTxAuthenticator.authenticate_vote(space.address, account.address, proposalId, choice, [{ index: '0x0', params: [] }], []);
+    console.log('Authenticating vote...');
+    const choice = '0x1';
+    const voteRes = await starkTxAuthenticator.authenticate_vote(
+      space.address,
+      account.address,
+      proposalId,
+      choice,
+      [{ index: '0x0', params: [] }],
+      [],
+    );
     await provider.waitForTransaction(voteRes.transaction_hash);
-    console.log("Vote authenticated");
+    console.log('Vote authenticated');
 
     // Advance time so that the maxVotingTimestamp is exceeded
     await starknetDevnet.provider.increaseTime(_max_voting_duration);
     await increaseEthBlockchainTime(eth_network, _max_voting_duration);
 
-    console.log("Executing proposal...");
+    console.log('Executing proposal...');
     const executRes = await space.execute(proposalId, executionPayload);
     await provider.waitForTransaction(executRes.transaction_hash);
-    console.log("Proposal executed");
+    console.log('Proposal executed');
 
     // Propagating message to L1
     const flushL2Response = await starknetDevnetProvider.postman.flush();
@@ -385,7 +514,10 @@ describe('L1 Avatar Execution', function () {
   it('should revert execution if an invalid payload is sent to L1', async function () {
     await starknetDevnet.provider.restart();
     await starknetDevnet.provider.load('./dump.pkl');
-    await starknetDevnetProvider.postman.loadL1MessagingContract(eth_network, mockMessagingContractAddress);
+    await starknetDevnetProvider.postman.loadL1MessagingContract(
+      eth_network,
+      mockMessagingContractAddress,
+    );
     starkTxAuthenticator.connect(account);
 
     const proposalTx = {
@@ -413,29 +545,43 @@ describe('L1 Avatar Execution', function () {
 
     const proposalId = { low: '0x1', high: '0x0' };
 
-    console.log("Authenticating proposal...");
-    const proposeRes = await starkTxAuthenticator.authenticate_propose(space.address, account.address, [], { address: ethRelayer.address, params: executionPayload }, []);
+    console.log('Authenticating proposal...');
+    const proposeRes = await starkTxAuthenticator.authenticate_propose(
+      space.address,
+      account.address,
+      choices,
+      [],
+      { address: ethRelayer.address, params: executionPayload },
+      [],
+    );
     await provider.waitForTransaction(proposeRes.transaction_hash);
-    console.log("Proposal authenticated");
+    console.log('Proposal authenticated');
 
     // Advance time so that voting has started
     await starknetDevnet.provider.increaseTime(_voting_delay);
     await increaseEthBlockchainTime(eth_network, _voting_delay);
 
-    console.log("Authenticating vote...");
-    const choice = new CairoCustomEnum({ For: {} });
-    const voteRes = await starkTxAuthenticator.authenticate_vote(space.address, account.address, proposalId, choice, [{ index: '0x0', params: [] }], []);
+    console.log('Authenticating vote...');
+    const choice = '0x1';
+    const voteRes = await starkTxAuthenticator.authenticate_vote(
+      space.address,
+      account.address,
+      proposalId,
+      choice,
+      [{ index: '0x0', params: [] }],
+      [],
+    );
     await provider.waitForTransaction(voteRes.transaction_hash);
-    console.log("Vote authenticated");
+    console.log('Vote authenticated');
 
     // Advance time so that the maxVotingTimestamp is exceeded
     await starknetDevnet.provider.increaseTime(_max_voting_duration);
     await increaseEthBlockchainTime(eth_network, _max_voting_duration);
 
-    console.log("Executing proposal...");
+    console.log('Executing proposal...');
     const executeRes = await space.execute(proposalId, executionPayload);
     await provider.waitForTransaction(executeRes.transaction_hash);
-    console.log("Proposal executed");
+    console.log('Proposal executed');
 
     // Propagating message to L1
     const flushL2Response = await starknetDevnetProvider.postman.flush();
@@ -444,7 +590,7 @@ describe('L1 Avatar Execution', function () {
     const [proposalId_, proposal, votes] = extractMessagePayload(message_payload);
 
     // Manually set an incorrect votesFor value
-    votes.votesFor = 10;
+    votes[1] = 10;
 
     await expect(
       l1AvatarExecutionStrategy.execute(
@@ -461,7 +607,10 @@ describe('L1 Avatar Execution', function () {
   it('should revert execution if an invalid proposal tx is sent to the execution strategy', async function () {
     await starknetDevnet.provider.restart();
     await starknetDevnet.provider.load('./dump.pkl');
-    await starknetDevnetProvider.postman.loadL1MessagingContract(eth_network, mockMessagingContractAddress);
+    await starknetDevnetProvider.postman.loadL1MessagingContract(
+      eth_network,
+      mockMessagingContractAddress,
+    );
     await starkTxAuthenticator.connect(account);
 
     const proposalTx = {
@@ -488,29 +637,43 @@ describe('L1 Avatar Execution', function () {
       executionHashUint256.high,
     ];
 
-    console.log("Authenticating proposal...");
-    const proposeRes = await starkTxAuthenticator.authenticate_propose(space.address, account.address, [], { address: ethRelayer.address, params: executionPayload }, []);
+    console.log('Authenticating proposal...');
+    const proposeRes = await starkTxAuthenticator.authenticate_propose(
+      space.address,
+      account.address,
+      choices,
+      [],
+      { address: ethRelayer.address, params: executionPayload },
+      [],
+    );
     await provider.waitForTransaction(proposeRes.transaction_hash);
-    console.log("Proposal authenticated");
+    console.log('Proposal authenticated');
 
     // Advance time so that voting has started
     await starknetDevnet.provider.increaseTime(_voting_delay);
     await increaseEthBlockchainTime(eth_network, _voting_delay);
 
-    console.log("Authenticating vote...");
-    const choice = new CairoCustomEnum({ For: {} });
-    const voteRes = await starkTxAuthenticator.authenticate_vote(space.address, account.address, { low: '0x1', high: '0x0' }, choice, [{ index: '0x0', params: [] }], []);
+    console.log('Authenticating vote...');
+    const choice = '0x1';
+    const voteRes = await starkTxAuthenticator.authenticate_vote(
+      space.address,
+      account.address,
+      { low: '0x1', high: '0x0' },
+      choice,
+      [{ index: '0x0', params: [] }],
+      [],
+    );
     await provider.waitForTransaction(voteRes.transaction_hash);
-    console.log("Vote authenticated");
+    console.log('Vote authenticated');
 
     // Advance time so that the maxVotingTimestamp is exceeded
     await starknetDevnet.provider.increaseTime(_max_voting_duration);
     await increaseEthBlockchainTime(eth_network, _max_voting_duration);
 
-    console.log("Executing proposal...");
+    console.log('Executing proposal...');
     const executeRes = await space.execute({ low: '0x1', high: '0x0' }, executionPayload);
     await provider.waitForTransaction(executeRes.transaction_hash);
-    console.log("Proposal executed");
+    console.log('Proposal executed');
 
     // Propagating message to L1
     const flushL2Response = await starknetDevnetProvider.postman.flush();
@@ -528,21 +691,19 @@ describe('L1 Avatar Execution', function () {
 
     // Sending fake proposal tx to the execution strategy
     await expect(
-      l1AvatarExecutionStrategy.execute(
-        space.address,
-        proposalId,
-        proposal,
-        votes,
-        executionHash,
-        [fakeProposalTx],
-      ),
-    ).to.be.revertedWithCustomError(l1AvatarExecutionStrategy, "InvalidPayload");
+      l1AvatarExecutionStrategy.execute(space.address, proposalId, proposal, votes, executionHash, [
+        fakeProposalTx,
+      ]),
+    ).to.be.revertedWithCustomError(l1AvatarExecutionStrategy, 'InvalidPayload');
   });
 
   it('should revert execution if quorum is not met (abstain votes only)', async function () {
     await starknetDevnet.provider.restart();
     await starknetDevnet.provider.load('./dump.pkl');
-    await starknetDevnetProvider.postman.loadL1MessagingContract(eth_network, mockMessagingContractAddress);
+    await starknetDevnetProvider.postman.loadL1MessagingContract(
+      eth_network,
+      mockMessagingContractAddress,
+    );
     await starkTxAuthenticator.connect(account);
 
     const proposalTx = {
@@ -570,31 +731,45 @@ describe('L1 Avatar Execution', function () {
     ];
 
     // Propose
-    console.log("Authenticating proposal...");
-    const proposeRes = await starkTxAuthenticator.authenticate_propose(space.address, account.address, [], { address: ethRelayer.address, params: executionPayload }, []);
+    console.log('Authenticating proposal...');
+    const proposeRes = await starkTxAuthenticator.authenticate_propose(
+      space.address,
+      account.address,
+      choices,
+      [],
+      { address: ethRelayer.address, params: executionPayload },
+      [],
+    );
     await provider.waitForTransaction(proposeRes.transaction_hash);
-    console.log("Proposal authenticated");
+    console.log('Proposal authenticated');
 
     // Advance time so that voting has started
     await starknetDevnet.provider.increaseTime(_voting_delay);
     await increaseEthBlockchainTime(eth_network, _voting_delay);
 
     // Voting
-    console.log("Authenticating vote...");
-    const choice = new CairoCustomEnum({ Abstain: {} });
-    const voteRes = await starkTxAuthenticator.authenticate_vote(space.address, account.address, { low: '0x1', high: '0x0' }, choice, [{ index: '0x0', params: [] }], []);
+    console.log('Authenticating vote...');
+    const choice = '0x2';
+    const voteRes = await starkTxAuthenticator.authenticate_vote(
+      space.address,
+      account.address,
+      { low: '0x1', high: '0x0' },
+      choice,
+      [{ index: '0x0', params: [] }],
+      [],
+    );
     await provider.waitForTransaction(voteRes.transaction_hash);
-    console.log("Vote authenticated");
+    console.log('Vote authenticated');
 
     // Advance time so that the maxVotingTimestamp is exceeded
     await starknetDevnet.provider.increaseTime(_max_voting_duration);
     await increaseEthBlockchainTime(eth_network, _max_voting_duration);
 
     // Execute
-    console.log("Executing proposal...");
+    console.log('Executing proposal...');
     const executeRes = await space.execute({ low: '0x1', high: '0x0' }, executionPayload);
     await provider.waitForTransaction(executeRes.transaction_hash);
-    console.log("Proposal executed");
+    console.log('Proposal executed');
 
     // Propagating message to L1
     const flushL2Response = await starknetDevnetProvider.postman.flush();
@@ -603,22 +778,20 @@ describe('L1 Avatar Execution', function () {
     const [proposalId, proposal, votes] = extractMessagePayload(message_payload);
 
     await expect(
-      l1AvatarExecutionStrategy.execute(
-        space.address,
-        proposalId,
-        proposal,
-        votes,
-        executionHash,
-        [proposalTx],
-      ),
-    ).to.be.revertedWithCustomError(l1AvatarExecutionStrategy, "InvalidProposalStatus");
+      l1AvatarExecutionStrategy.execute(space.address, proposalId, proposal, votes, executionHash, [
+        proposalTx,
+      ]),
+    ).to.be.revertedWithCustomError(l1AvatarExecutionStrategy, 'InvalidProposalStatus');
   });
 
   it('should revert execution if quorum is not met (against votes only)', async function () {
     {
       await starknetDevnet.provider.restart();
       await starknetDevnet.provider.load('./dump.pkl');
-      await starknetDevnetProvider.postman.loadL1MessagingContract(eth_network, mockMessagingContractAddress);
+      await starknetDevnetProvider.postman.loadL1MessagingContract(
+        eth_network,
+        mockMessagingContractAddress,
+      );
       await starkTxAuthenticator.connect(account);
 
       const proposalTx = {
@@ -646,31 +819,45 @@ describe('L1 Avatar Execution', function () {
       ];
 
       // Propose
-      console.log("Authenticating proposal...");
-      const proposeRes = await starkTxAuthenticator.authenticate_propose(space.address, account.address, [], { address: ethRelayer.address, params: executionPayload }, []);
+      console.log('Authenticating proposal...');
+      const proposeRes = await starkTxAuthenticator.authenticate_propose(
+        space.address,
+        account.address,
+        choices,
+        [],
+        { address: ethRelayer.address, params: executionPayload },
+        [],
+      );
       await provider.waitForTransaction(proposeRes.transaction_hash);
-      console.log("Proposal authenticated");
+      console.log('Proposal authenticated');
 
       // Advance time so that voting has started
       await starknetDevnet.provider.increaseTime(_voting_delay);
       await increaseEthBlockchainTime(eth_network, _voting_delay);
 
       // Voting
-      console.log("Authenticating vote...");
-      const choice = new CairoCustomEnum({ Against: {} });
-      const voteRes = await starkTxAuthenticator.authenticate_vote(space.address, account.address, { low: '0x1', high: '0x0' }, choice, [{ index: '0x0', params: [] }], []);
+      console.log('Authenticating vote...');
+      const choice = '0x0';
+      const voteRes = await starkTxAuthenticator.authenticate_vote(
+        space.address,
+        account.address,
+        { low: '0x1', high: '0x0' },
+        choice,
+        [{ index: '0x0', params: [] }],
+        [],
+      );
       await provider.waitForTransaction(voteRes.transaction_hash);
-      console.log("Vote authenticated");
+      console.log('Vote authenticated');
 
       // Advance time so that the maxVotingTimestamp is exceeded
       await starknetDevnet.provider.increaseTime(_max_voting_duration);
       await increaseEthBlockchainTime(eth_network, _max_voting_duration);
 
       // Execute
-      console.log("Executing proposal...");
+      console.log('Executing proposal...');
       const executeRes = await space.execute({ low: '0x1', high: '0x0' }, executionPayload);
       await provider.waitForTransaction(executeRes.transaction_hash);
-      console.log("Proposal executed");
+      console.log('Proposal executed');
 
       // Propagating message to L1
       const flushL2Response = await starknetDevnetProvider.postman.flush();
@@ -687,7 +874,7 @@ describe('L1 Avatar Execution', function () {
           executionHash,
           [proposalTx],
         ),
-      ).to.be.revertedWithCustomError(l1AvatarExecutionStrategy, "InvalidProposalStatus");
+      ).to.be.revertedWithCustomError(l1AvatarExecutionStrategy, 'InvalidProposalStatus');
     }
   });
 
@@ -695,7 +882,10 @@ describe('L1 Avatar Execution', function () {
     {
       await starknetDevnet.provider.restart();
       await starknetDevnet.provider.load('./dump.pkl');
-      await starknetDevnetProvider.postman.loadL1MessagingContract(eth_network, mockMessagingContractAddress);
+      await starknetDevnetProvider.postman.loadL1MessagingContract(
+        eth_network,
+        mockMessagingContractAddress,
+      );
       await starkTxAuthenticator.connect(account);
 
       const proposalTx = {
@@ -723,10 +913,17 @@ describe('L1 Avatar Execution', function () {
       ];
 
       // Propose
-      console.log("Authenticating proposal...");
-      const proposeRes = await starkTxAuthenticator.authenticate_propose(space.address, account.address, [], { address: ethRelayer.address, params: executionPayload }, []);
+      console.log('Authenticating proposal...');
+      const proposeRes = await starkTxAuthenticator.authenticate_propose(
+        space.address,
+        account.address,
+        choices,
+        [],
+        { address: ethRelayer.address, params: executionPayload },
+        [],
+      );
       await provider.waitForTransaction(proposeRes.transaction_hash);
-      console.log("Proposal authenticated");
+      console.log('Proposal authenticated');
 
       // Advance time so that voting has started
       await starknetDevnet.provider.increaseTime(_voting_delay);
@@ -739,10 +936,10 @@ describe('L1 Avatar Execution', function () {
       await increaseEthBlockchainTime(eth_network, _max_voting_duration);
 
       // Execute
-      console.log("Executing proposal...");
+      console.log('Executing proposal...');
       const executeRes = await space.execute({ low: '0x1', high: '0x0' }, executionPayload);
       await provider.waitForTransaction(executeRes.transaction_hash);
-      console.log("Proposal executed");
+      console.log('Proposal executed');
 
       // Propagating message to L1
       const flushL2Response = await starknetDevnetProvider.postman.flush();
@@ -759,14 +956,17 @@ describe('L1 Avatar Execution', function () {
           executionHash,
           [proposalTx],
         ),
-      ).to.be.revertedWithCustomError(l1AvatarExecutionStrategy, "InvalidProposalStatus");
+      ).to.be.revertedWithCustomError(l1AvatarExecutionStrategy, 'InvalidProposalStatus');
     }
   });
 
   it('should revert execution if voting period is not exceeded', async function () {
     await starknetDevnet.provider.restart();
     await starknetDevnet.provider.load('./dump.pkl');
-    await starknetDevnetProvider.postman.loadL1MessagingContract(eth_network, mockMessagingContractAddress);
+    await starknetDevnetProvider.postman.loadL1MessagingContract(
+      eth_network,
+      mockMessagingContractAddress,
+    );
     await starkTxAuthenticator.connect(account);
 
     const proposalTx = {
@@ -794,31 +994,45 @@ describe('L1 Avatar Execution', function () {
     ];
 
     // Propose
-    console.log("Authenticating proposal...");
-    const proposeRes = await starkTxAuthenticator.authenticate_propose(space.address, account.address, [], { address: ethRelayer.address, params: executionPayload }, []);
+    console.log('Authenticating proposal...');
+    const proposeRes = await starkTxAuthenticator.authenticate_propose(
+      space.address,
+      account.address,
+      choices,
+      [],
+      { address: ethRelayer.address, params: executionPayload },
+      [],
+    );
     await provider.waitForTransaction(proposeRes.transaction_hash);
-    console.log("Proposal authenticated");
+    console.log('Proposal authenticated');
 
     // Advance time so that voting has started
     await starknetDevnet.provider.increaseTime(_voting_delay);
     await increaseEthBlockchainTime(eth_network, _voting_delay);
 
     // Voting
-    console.log("Authenticating vote...");
-    const choice = new CairoCustomEnum({ For: {} });
-    const voteRes = await starkTxAuthenticator.authenticate_vote(space.address, account.address, { low: '0x1', high: '0x0' }, choice, [{ index: '0x0', params: [] }], []);
+    console.log('Authenticating vote...');
+    const choice = '0x1';
+    const voteRes = await starkTxAuthenticator.authenticate_vote(
+      space.address,
+      account.address,
+      { low: '0x1', high: '0x0' },
+      choice,
+      [{ index: '0x0', params: [] }],
+      [],
+    );
     await provider.waitForTransaction(voteRes.transaction_hash);
-    console.log("Vote authenticated");
+    console.log('Vote authenticated');
 
     // Try to execute before max Voting Timestamp is exceeded
     try {
-      console.log("Trying to executing proposal...");
+      console.log('Trying to executing proposal...');
       const executeRes = await space.execute({ low: '0x1', high: '0x0' }, executionPayload);
       await provider.waitForTransaction(executeRes.transaction_hash);
       expect.fail('Should have failed');
     } catch (err) {
       expect(err.message).to.contain(shortString.encodeShortString('Before max end timestamp'));
-      console.log("Invalid proposal failed as expected");
+      console.log('Invalid proposal failed as expected');
     }
-  })
+  });
 });

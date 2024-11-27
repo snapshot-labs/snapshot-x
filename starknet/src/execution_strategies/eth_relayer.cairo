@@ -17,9 +17,7 @@ mod EthRelayerExecutionStrategy {
     ///
     /// * proposal_id - The id of the proposal to execute.
     /// * proposal - The struct of the proposal to execute.
-    /// * votes_for - The number of votes for the proposal.
-    /// * votes_against - The number of votes against the proposal.
-    /// * votes_abstain - The number of votes abstaining from the proposal.
+    /// * votes - An array with each element representing the amount of voting power for each choice.
     /// * payload - An array containing the serialized L1 execution strategy address and the L1 execution hash.
     #[abi(embed_v0)]
     impl EthRelayerExecutionStrategy of IExecutionStrategy<ContractState> {
@@ -27,9 +25,7 @@ mod EthRelayerExecutionStrategy {
             ref self: ContractState,
             proposal_id: u256,
             proposal: Proposal,
-            votes_for: u256,
-            votes_against: u256,
-            votes_abstain: u256,
+            votes: Array<u256>,
             payload: Array<felt252>
         ) {
             // We cannot have early proposal execution with this strategy because we determine the proposal status 
@@ -54,9 +50,7 @@ mod EthRelayerExecutionStrategy {
             space.serialize(ref l1_payload);
             proposal_id.serialize(ref l1_payload);
             proposal.serialize(ref l1_payload);
-            votes_for.serialize(ref l1_payload);
-            votes_against.serialize(ref l1_payload);
-            votes_abstain.serialize(ref l1_payload);
+            votes.serialize(ref l1_payload);
             l1_execution_hash.serialize(ref l1_payload);
 
             starknet::send_message_to_l1_syscall(l1_execution_strategy.into(), l1_payload.span())
@@ -69,11 +63,7 @@ mod EthRelayerExecutionStrategy {
 
         /// Errors when called. The proposal status is only available on the L1 contract.
         fn get_proposal_status(
-            self: @ContractState,
-            proposal: Proposal,
-            votes_for: u256,
-            votes_against: u256,
-            votes_abstain: u256,
+            self: @ContractState, proposal: Proposal, votes: Array<u256>,
         ) -> ProposalStatus {
             panic_with_felt252('unimplemented');
             ProposalStatus::Cancelled(())

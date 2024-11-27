@@ -22,9 +22,7 @@ mod ExecutorExecutionStrategy {
             ref self: ContractState,
             proposal_id: u256,
             proposal: Proposal,
-            votes_for: u256,
-            votes_against: u256,
-            votes_abstain: u256,
+            votes: Array<u256>,
             payload: Array<felt252>
         ) {
             let mut sp4n = payload.span();
@@ -33,11 +31,7 @@ mod ExecutorExecutionStrategy {
         }
 
         fn get_proposal_status(
-            self: @ContractState,
-            proposal: Proposal,
-            votes_for: u256,
-            votes_against: u256,
-            votes_abstain: u256,
+            self: @ContractState, proposal: Proposal, votes: Array<u256>,
         ) -> ProposalStatus {
             panic_with_felt252('unimplemented');
             ProposalStatus::Cancelled(())
@@ -69,18 +63,12 @@ mod ExecutorWithoutTxExecutionStrategy {
             ref self: ContractState,
             proposal_id: u256,
             proposal: Proposal,
-            votes_for: u256,
-            votes_against: u256,
-            votes_abstain: u256,
+            votes: Array<u256>,
             payload: Array<felt252>
         ) {}
 
         fn get_proposal_status(
-            self: @ContractState,
-            proposal: Proposal,
-            votes_for: u256,
-            votes_against: u256,
-            votes_abstain: u256,
+            self: @ContractState, proposal: Proposal, votes: Array<u256>,
         ) -> ProposalStatus {
             panic_with_felt252('unimplemented');
             ProposalStatus::Cancelled(())

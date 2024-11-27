@@ -11,7 +11,6 @@ import {
   CairoOptionVariant,
 } from 'starknet';
 import { utils } from '@snapshot-labs/sx';
-import { check } from 'prettier';
 
 dotenv.config();
 
@@ -26,6 +25,7 @@ const accountPk = process.env.PK || '';
 const starknetNetworkUrl = process.env.STARKNET_NETWORK_URL || '';
 const ethNetworkUrl = process.env.ETH_NETWORK_URL || '';
 const herodotusApiKey = process.env.HERODOTUS_API_KEY || '';
+const choices = '0x3';
 
 async function main() {
   const provider = new RpcProvider({ nodeUrl: starknetNetworkUrl });
@@ -88,6 +88,7 @@ async function main() {
       selector: '0x1bfd596ae442867ef71ca523061610682af8b00fc2738329422f4ad8d220b81',
       data: CallData.compile({
         author: utils.starknetEnums.getUserAddressEnum('ETHEREUM', voterAddress),
+        choices: choices,
         metadataUri: ['0x1', '0x2', '0x3', '0x4'],
         executionStrategy: {
           address: '0x0000000000000000000000000000000000005678',

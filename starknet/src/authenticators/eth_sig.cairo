@@ -1,5 +1,5 @@
 use starknet::{ContractAddress, EthAddress};
-use sx::types::{Strategy, IndexedStrategy, Choice};
+use sx::types::{Strategy, IndexedStrategy};
 
 #[starknet::interface]
 trait IEthSigAuthenticator<TContractState> {
@@ -23,6 +23,7 @@ trait IEthSigAuthenticator<TContractState> {
         v: u32,
         space: ContractAddress,
         author: EthAddress,
+        choices: u128,
         metadata_uri: Array<felt252>,
         execution_strategy: Strategy,
         user_proposal_validation_params: Array<felt252>,
@@ -51,7 +52,7 @@ trait IEthSigAuthenticator<TContractState> {
         space: ContractAddress,
         voter: EthAddress,
         proposal_id: u256,
-        choice: Choice,
+        choice: u128,
         user_voting_strategies: Array<IndexedStrategy>,
         metadata_uri: Array<felt252>,
     );
@@ -77,6 +78,7 @@ trait IEthSigAuthenticator<TContractState> {
         space: ContractAddress,
         author: EthAddress,
         proposal_id: u256,
+        choices: u128,
         execution_strategy: Strategy,
         metadata_uri: Array<felt252>,
         salt: u256
@@ -88,7 +90,7 @@ mod EthSigAuthenticator {
     use super::IEthSigAuthenticator;
     use starknet::{ContractAddress, EthAddress};
     use sx::interfaces::{ISpaceDispatcher, ISpaceDispatcherTrait};
-    use sx::types::{Strategy, IndexedStrategy, Choice, UserAddress};
+    use sx::types::{Strategy, IndexedStrategy, UserAddress};
     use sx::utils::{eip712, LegacyHashEthAddress, ByteReverse};
 
     #[storage]
@@ -105,6 +107,7 @@ mod EthSigAuthenticator {
             v: u32,
             space: ContractAddress,
             author: EthAddress,
+            choices: u128,
             metadata_uri: Array<felt252>,
             execution_strategy: Strategy,
             user_proposal_validation_params: Array<felt252>,
@@ -118,6 +121,7 @@ mod EthSigAuthenticator {
                 v,
                 space,
                 author,
+                choices,
                 metadata_uri.span(),
                 @execution_strategy,
                 user_proposal_validation_params.span(),
@@ -127,6 +131,7 @@ mod EthSigAuthenticator {
             ISpaceDispatcher { contract_address: space }
                 .propose(
                     UserAddress::Ethereum(author),
+                    choices,
                     metadata_uri,
                     execution_strategy,
                     user_proposal_validation_params,
@@ -141,7 +146,7 @@ mod EthSigAuthenticator {
             space: ContractAddress,
             voter: EthAddress,
             proposal_id: u256,
-            choice: Choice,
+            choice: u128,
             user_voting_strategies: Array<IndexedStrategy>,
             metadata_uri: Array<felt252>,
         ) {
@@ -177,6 +182,7 @@ mod EthSigAuthenticator {
             space: ContractAddress,
             author: EthAddress,
             proposal_id: u256,
+            choices: u128,
             execution_strategy: Strategy,
             metadata_uri: Array<felt252>,
             salt: u256
@@ -184,12 +190,25 @@ mod EthSigAuthenticator {
             assert(!self._used_salts.read((author, salt)), 'Salt Already Used');
 
             eip712::verify_update_proposal_sig(
-                r, s, v, space, author, proposal_id, @execution_strategy, metadata_uri.span(), salt
+                r,
+                s,
+                v,
+                space,
+                author,
+                proposal_id,
+                choices,
+                @execution_strategy,
+                metadata_uri.span(),
+                salt
             );
             self._used_salts.write((author, salt), true);
             ISpaceDispatcher { contract_address: space }
                 .update_proposal(
-                    UserAddress::Ethereum(author), proposal_id, execution_strategy, metadata_uri
+                    UserAddress::Ethereum(author),
+                    proposal_id,
+                    choices,
+                    execution_strategy,
+                    metadata_uri
                 );
         }
     }

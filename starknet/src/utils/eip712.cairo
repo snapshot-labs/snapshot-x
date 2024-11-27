@@ -1,7 +1,7 @@
 use starknet::{EthAddress, ContractAddress, secp256_trait};
 use starknet::eth_signature::verify_eth_signature;
 use starknet::secp256k1::Secp256k1Point;
-use sx::types::{Strategy, IndexedStrategy, Choice};
+use sx::types::{Strategy, IndexedStrategy};
 use sx::utils::{endian, ByteReverse, KeccakStructHash, TIntoU256};
 use sx::utils::constants::{
     DOMAIN_HASH_LOW, DOMAIN_HASH_HIGH, ETHEREUM_PREFIX, PROPOSE_TYPEHASH_LOW, PROPOSE_TYPEHASH_HIGH,
@@ -16,13 +16,20 @@ fn verify_propose_sig(
     v: u32,
     space: ContractAddress,
     author: EthAddress,
+    choices: u128,
     metadata_uri: Span<felt252>,
     execution_strategy: @Strategy,
     user_proposal_validation_params: Span<felt252>,
     salt: u256,
 ) {
     let digest: u256 = get_propose_digest(
-        space, author, metadata_uri, execution_strategy, user_proposal_validation_params, salt
+        space,
+        author,
+        choices,
+        metadata_uri,
+        execution_strategy,
+        user_proposal_validation_params,
+        salt
     );
     verify_eth_signature(digest, secp256_trait::signature_from_vrs(v, r, s), author);
 }
@@ -35,7 +42,7 @@ fn verify_vote_sig(
     space: ContractAddress,
     voter: EthAddress,
     proposal_id: u256,
-    choice: Choice,
+    choice: u128,
     user_voting_strategies: Span<IndexedStrategy>,
     metadata_uri: Span<felt252>,
 ) {
@@ -53,12 +60,13 @@ fn verify_update_proposal_sig(
     space: ContractAddress,
     author: EthAddress,
     proposal_id: u256,
+    choices: u128,
     execution_strategy: @Strategy,
     metadata_uri: Span<felt252>,
     salt: u256
 ) {
     let digest: u256 = get_update_proposal_digest(
-        space, author, proposal_id, execution_strategy, metadata_uri, salt
+        space, author, proposal_id, choices, execution_strategy, metadata_uri, salt
     );
     verify_eth_signature(digest, secp256_trait::signature_from_vrs(v, r, s), author);
 }
@@ -67,17 +75,20 @@ fn verify_update_proposal_sig(
 fn get_propose_digest(
     space: ContractAddress,
     author: EthAddress,
+    choices: u128,
     metadata_uri: Span<felt252>,
     execution_strategy: @Strategy,
     user_proposal_validation_params: Span<felt252>,
     salt: u256
 ) -> u256 {
+    let choices_u256 = u256 { low: choices, high: 0 };
     let encoded_data = array![
         u256 { low: PROPOSE_TYPEHASH_LOW, high: PROPOSE_TYPEHASH_HIGH },
         Felt252IntoU256::into(starknet::get_tx_info().unbox().chain_id),
         starknet::get_contract_address().into(),
         space.into(),
         author.into(),
+        choices_u256,
         metadata_uri.keccak_struct_hash(),
         execution_strategy.keccak_struct_hash(),
         user_proposal_validation_params.keccak_struct_hash(),
@@ -92,10 +103,11 @@ fn get_vote_digest(
     space: ContractAddress,
     voter: EthAddress,
     proposal_id: u256,
-    choice: Choice,
+    choice: u128,
     user_voting_strategies: Span<IndexedStrategy>,
     metadata_uri: Span<felt252>,
 ) -> u256 {
+    let choice_u256 = u256 { low: choice, high: 0 };
     let encoded_data = array![
         u256 { low: VOTE_TYPEHASH_LOW, high: VOTE_TYPEHASH_HIGH },
         Felt252IntoU256::into(starknet::get_tx_info().unbox().chain_id),
@@ -103,7 +115,7 @@ fn get_vote_digest(
         space.into(),
         voter.into(),
         proposal_id,
-        choice.into(),
+        choice_u256,
         user_voting_strategies.keccak_struct_hash(),
         metadata_uri.keccak_struct_hash()
     ];
@@ -116,10 +128,12 @@ fn get_update_proposal_digest(
     space: ContractAddress,
     author: EthAddress,
     proposal_id: u256,
+    choices: u128,
     execution_strategy: @Strategy,
     metadata_uri: Span<felt252>,
     salt: u256
 ) -> u256 {
+    let choices_u256 = u256 { low: choices, high: 0 };
     let encoded_data = array![
         u256 { low: UPDATE_PROPOSAL_TYPEHASH_LOW, high: UPDATE_PROPOSAL_TYPEHASH_HIGH },
         Felt252IntoU256::into(starknet::get_tx_info().unbox().chain_id),
@@ -127,6 +141,7 @@ fn get_update_proposal_digest(
         space.into(),
         author.into(),
         proposal_id,
+        choices_u256,
         execution_strategy.keccak_struct_hash(),
         metadata_uri.keccak_struct_hash(),
         salt

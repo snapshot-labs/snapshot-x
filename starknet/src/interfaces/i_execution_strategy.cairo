@@ -11,17 +11,13 @@ trait IExecutionStrategy<TContractState> {
     ///
     /// * `proposal_id` - The id of the proposal to execute.
     /// * `proposal` - The struct of the proposal to execute.
-    /// * `votes_for` - The number of votes for the proposal.
-    /// * `votes_against` - The number of votes against the proposal.
-    /// * `votes_abstain` - The number of votes abstaining from the proposal.
+    /// * `votes` - An array with each element representing the amount of voting power for each choice.
     /// * `payload` - The payload of the proposal.
     fn execute(
         ref self: TContractState,
         proposal_id: u256,
         proposal: Proposal,
-        votes_for: u256,
-        votes_against: u256,
-        votes_abstain: u256,
+        votes: Array<u256>,
         payload: Array<felt252>
     );
 
@@ -30,19 +26,13 @@ trait IExecutionStrategy<TContractState> {
     /// # Arguments
     ///
     /// * `proposal` - The proposal to get the status for.
-    /// * `votes_for` - The number of votes for the proposal.
-    /// * `votes_against` - The number of votes against the proposal.
-    /// * `votes_abstain` - The number of votes abstaining from the proposal.
+    /// * `votes` - An array with each element representing the amount of voting power for each choice.
     ///
     /// # Returns
     ///
     /// * `ProposalStatus` - The status of the proposal.
     fn get_proposal_status(
-        self: @TContractState,
-        proposal: Proposal,
-        votes_for: u256,
-        votes_against: u256,
-        votes_abstain: u256,
+        self: @TContractState, proposal: Proposal, votes: Array<u256>
     ) -> ProposalStatus;
 
     /// Returns a short string describing the strategy type.
