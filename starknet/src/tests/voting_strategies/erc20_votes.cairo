@@ -122,7 +122,7 @@ mod tests {
         let account3 = starknet::contract_address_const::<0x4567>();
         let account4 = starknet::contract_address_const::<0x5678>();
 
-        // Calling from ownwer account
+        // Calling from owner account
         testing::set_contract_address(OWNER());
         // Fund them
         token_contract.transfer(account0, 5_u256);

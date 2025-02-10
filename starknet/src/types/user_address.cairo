@@ -108,6 +108,6 @@ mod tests {
             UserAddress::Ethereum(EthAddress { address: 0 }).is_non_zero() == false,
             'false positive is zero'
         );
-        assert(UserAddress::Custom(0_u256).is_non_zero() == false, 'false positve not zero');
+        assert(UserAddress::Custom(0_u256).is_non_zero() == false, 'false positive not zero');
     }
 }
