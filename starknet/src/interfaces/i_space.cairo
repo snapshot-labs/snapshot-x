@@ -23,7 +23,7 @@ trait ISpace<TContractState> {
     fn next_proposal_id(self: @TContractState) -> u256;
 
     /// The allow list of authenticators. Only allowed authenticators can interact with the `propose`,
-    /// `udpate_proposal` and `vote` functions.
+    /// `update_proposal` and `vote` functions.
     fn authenticators(self: @TContractState, account: ContractAddress) -> bool;
 
     /// An array of allowed voting strategies. Voting strategies are used to determine the voting power of a voter.
